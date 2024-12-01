@@ -34,7 +34,8 @@ header {
     font-size: 1rem;
     cursor: pointer;
     padding: 5px;
+    transition: color 0.3s ease;
   }
   .nav-buttons button:hover {
-    color: #0056b3; 
+    color: grey
   }
