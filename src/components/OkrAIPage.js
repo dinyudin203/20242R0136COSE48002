@@ -8,7 +8,6 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
   const [selectedCompany, setSelectedCompany] = useState('모든 기업');
   const [selectedYear, setSelectedYear] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
   useEffect(() => {
     setProcessedData(selectedData);
@@ -27,19 +26,18 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
     const worksheet = XLSX.utils.json_to_sheet(processedData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR AI 결과');
-    // 엑셀 스타일 설정 (선택 사항)
+
     worksheet['!cols'] = [
-      { wch: 10 }, // No.
-      { wch: 15 }, // 일자
-      { wch: 20 }, // 기업명
-      { wch: 15 }, // 업종
-      { wch: 15 }, // 부서명
-      { wch: 15 }, // 구분(OKR)
-      { wch: 30 }, // 상위/해당목표
-      { wch: 30 }, // 작성 OKR
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 30 },
     ];
 
-    // 엑셀 파일 다운로드
     XLSX.writeFile(workbook, 'okr_data.xlsx');
   };
 
@@ -57,16 +55,13 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
 
   useEffect(() => {
     if (selectedCompany === '모든 기업' && selectedYear === '') {
-      setFilteredData(processedData); 
+      setFilteredData(processedData);
     } else {
       handleFilterChange();
     }
   }, [selectedCompany, selectedYear, processedData]);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const totalPages = filteredData.length;
 
   return (
     <div className="page-container">
@@ -97,68 +92,63 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           ))}
         </select>
       </div>
-      <div style={{ marginTop: '0.8em', marginRight: '1.5em', textAlign: 'right' }}>
-        <Button onClick={exportAllToExcel} disabled={processedData.length === 0} 
-        style={{ 
-          backgroundColor: processedData.length === 0 ? '#ccc' : '#007bff', 
-          padding: '10px 20px',
-          color: 'white',
-          cursor: processedData.length === 0 ? 'not-allowed' : 'pointer', 
-          }}>
+      <div style={{ marginTop: '0.8em', textAlign: 'right' }}>
+        <Button
+          onClick={exportAllToExcel}
+          disabled={processedData.length === 0}
+          style={{
+            backgroundColor: processedData.length === 0 ? '#ccc' : '#007bff',
+            padding: '10px 20px',
+            color: 'white',
+            cursor: processedData.length === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
           전체 export
         </Button>
       </div>
       {filteredData.length === 0 ? (
-        <p style = {{ margin: '0.8em'}}>AI 처리된 데이터가 없습니다.</p>
+        <p style={{ margin: '0.8em' }}>AI 처리된 데이터가 없습니다.</p>
       ) : (
-        <div style={{ marginTop: '10px' }}>
-          {paginatedData.map((okr, index) => (
-            <div
-              key={index}
-              style={{
-                border: '1px solid #ccc',
-                borderRadius: '10px',
-                padding: '10px',
-                marginBottom: '10px',
-              }}
-            >
-              <p>
-                <strong>No.:</strong> {okr.no}
-              </p>
-              <p>
-                <strong>일자:</strong> {okr.date}
-              </p>
-              <p>
-                <strong>기업명:</strong> {okr.company}
-              </p>
-              <p>
-                <strong>업종:</strong> {okr.industry}
-              </p>
-              <p>
-                <strong>부서명:</strong> {okr.department}
-              </p>
-              <p>
-                <strong>구분(OKR):</strong> {okr.type}
-              </p>
-              <p>
-                <strong>상위/해당목표:</strong> {okr.goal}
-              </p>
-              <p>
-                <strong>작성 OKR:</strong> {okr.okr}
-              </p>
-            </div>
-          ))}
+        <div
+          style={{
+            border: '1px solid #ccc',
+            borderRadius: '10px',
+            padding: '10px',
+            marginTop: '10px',
+          }}
+        >
+          <p>
+            <strong>No.:</strong> {filteredData[currentPage - 1].no}
+          </p>
+          <p>
+            <strong>일자:</strong> {filteredData[currentPage - 1].date}
+          </p>
+          <p>
+            <strong>기업명:</strong> {filteredData[currentPage - 1].company}
+          </p>
+          <p>
+            <strong>업종:</strong> {filteredData[currentPage - 1].industry}
+          </p>
+          <p>
+            <strong>부서명:</strong> {filteredData[currentPage - 1].department}
+          </p>
+          <p>
+            <strong>구분(OKR):</strong> {filteredData[currentPage - 1].type}
+          </p>
+          <p>
+            <strong>상위/해당목표:</strong> {filteredData[currentPage - 1].goal}
+          </p>
+          <p>
+            <strong>작성 OKR:</strong> {filteredData[currentPage - 1].okr}
+          </p>
         </div>
       )}
-
       <div
         style={{
           display: 'flex',
           justifyContent: 'center',
           marginTop: '20px',
           gap: '10px',
-          alignitems: 'center',
-          
         }}
       >
         <button
@@ -166,17 +156,16 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           onClick={() => setCurrentPage((prev) => prev - 1)}
           style={{
             padding: '5px 10px',
-            borderRadius: '4px',
-            backgroundColor: currentPage === 1 || totalPages === 0 ?  '#ccc' : '#007bff',
+            backgroundColor: currentPage === 1 || totalPages === 0 ? '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
-            cursor: currentPage === 1 || totalPages === 0 ?  'not-allowed' : 'pointer',
+            cursor: currentPage === 1 || totalPages === 0 ? 'not-allowed' : 'pointer',
           }}
         >
           이전
         </button>
         <span
-           style={{
+          style={{
             display: 'inline-block',
             fontSize: '1rem',
             lineHeight: '2',
@@ -185,15 +174,16 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           {totalPages === 0 ? '0 / 0' : `${currentPage} / ${totalPages}`}
         </span>
         <button
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || totalPages === 0}
           onClick={() => setCurrentPage((prev) => prev + 1)}
           style={{
             padding: '5px 10px',
-            borderRadius: '4px',
-            backgroundColor: currentPage === totalPages || totalPages === 0? '#ccc' : '#007bff',
+            backgroundColor:
+              currentPage === totalPages || totalPages === 0 ? '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
-            cursor: currentPage === totalPages || totalPages === 0? 'not-allowed' : 'pointer',
+            cursor:
+              currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer',
           }}
         >
           다음

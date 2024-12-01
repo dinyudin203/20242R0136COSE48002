@@ -1,58 +1,72 @@
+/* 기본 설정 */
 html, body {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  header {
-    display: flex;
-    flex-direction: column;
-    padding: 10px 20px;
-    background-color: black;
-    color: white;
-  }
-  
-  header h1 {
-    font-family: 'Arial', sans-serif; 
-    font-size: 1.5rem;
-    color: white;
-    margin: 10px 0 10px 0; /* 아래쪽 여백 추가 */
-  }
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  .nav-section {
-    display: flex;
-    justify-content: space-between; /* 버튼과 Import를 양쪽으로 배치 */
-    align-items: center;
-    margin-top: 10px;
-  }
-  
-  .nav-buttons {
-    display: flex; 
-    gap: 20px;
-  }  
-  
-  .nav-buttons button {
-    background: none; 
-    border: none;
-    color: white;
-    font-family: 'Arial', sans-serif; 
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 5px;
-    transition: color 0.3s ease;
-  }
-  .nav-buttons button:hover {
-    color: grey
-  }
-  .import-button button {
-    padding: 10px 10px;
-    border-radius: 5px;
-    background-color: white;
-    color: #007bff;
-    cursor: pointer;
-  }
-  
-  .import-button button:hover {
-    background-color: #007bff;
-    color: white;
-  }
+/* 헤더 컨테이너 */
+.header-container {
+  background-color: black;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  flex-direction: column; /* 두 줄 구조 */
+  gap: 10px; /* 두 줄 사이 간격 */
+}
+
+/* 첫 번째 줄: 제목 */
+.header-title {
+  font-family: 'Arial', sans-serif;
+  font-size: 1.8rem;
+  color: white;
+  font-weight: bold;
+  margin: 10px 20px;
+  text-align: left; /* 제목 왼쪽 정렬 */
+}
+
+/* 두 번째 줄: 네비게이션 + Import 버튼 */
+.nav-section {
+  display: flex;
+  justify-content: space-between; /* 버튼 그룹과 Import 버튼 양쪽 정렬 */
+  align-items: center; /* 수직 정렬 */
+}
+
+/* 네비게이션 버튼 그룹 */
+.nav-buttons {
+  display: flex;
+  gap: 20px; /* 버튼 간격 */
+}
+
+/* 네비게이션 버튼 스타일 */
+.nav-buttons button {
+  background: none;
+  border: none;
+  color: white;
+  font-family: 'Arial', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: color 0.3s ease;
+}
+
+.nav-buttons button:hover {
+  color: grey; /* 호버 시 색상 변경 */
+}
+
+/* Import 버튼 */
+.import-button {
+  background-color: white;
+  color: #007bff;
+  border: 1px solid #ddd;
+  padding: 5px 15px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto; /* Import 버튼을 오른쪽 끝으로 정렬 */
+}
+
+.import-button:hover {
+  background-color: #007bff;
+  color: white;
+}

@@ -3,12 +3,13 @@ import OkrPageHeader from './components/OkrPageHeader';
 import OkrInfoPage from './components/OkrInfoPage';
 import OkrDataPage from './components/OkrDataPage';
 import OkrAIPage from './components/OkrAIPage';
-import OkrPageFooter from './components/OkrPageFooter'
+import OkrPageFooter from './components/OkrPageFooter';
 import './styles/global.css';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('OkrInfoPage'); // Default: OKR 기업정보 페이지
   const [selectedData, setSelectedData] = useState([]); // 선택된 OKR 데이터 상태
+  const [selectedCompanies, setSelectedCompanies] = useState([]); // 선택된 기업 데이터
 
   // OKR 데이터에서 선택된 데이터 처리
   const handleApplyData = (selected) => {
@@ -23,13 +24,22 @@ const App = () => {
 
       {/* Main Content */}
       <main style={{ padding: '20px' }}>
-        {activeTab === 'OkrInfoPage' && <OkrInfoPage />}
+        {activeTab === 'OkrInfoPage' && (
+          <OkrInfoPage
+            setActiveTab={setActiveTab} // ActiveTab 변경 함수 전달
+            setSelectedCompanies={setSelectedCompanies} // 선택된 기업 설정 함수 전달
+          />
+        )}
         {activeTab === 'OkrDataPage' && (
-          <OkrDataPage onApply={handleApplyData} /> // AI 적용 버튼은 여기만 존재
+          <OkrDataPage
+            selectedCompanies={selectedCompanies} // OkrInfoPage에서 전달받은 기업 데이터
+            onApply={handleApplyData} // AI 적용 버튼 클릭 시 데이터 전달
+          />
         )}
         {activeTab === 'OkrAIPage' && <OkrAIPage selectedData={selectedData} />}
       </main>
-      {/* Footer Componet */}
+
+      {/* Footer Component */}
       <OkrPageFooter />
     </div>
   );

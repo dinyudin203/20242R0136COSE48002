@@ -30,8 +30,8 @@ const ExcelImportPopup = ({ isVisible, onClose, onExcelImport }) => {
     <div className="overlay">
       <div className="popup">
         {/* 제목과 파일 선택 버튼 */}
-        <div className="header-container">
-          <h3 className="header">엑셀 파일 업로드</h3>
+        <div className="header-container1">
+          <h3 className="header1">엑셀 파일 업로드</h3>
           <input
             type="file"
             accept=".xlsx, .xls"

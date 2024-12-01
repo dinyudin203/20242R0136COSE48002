@@ -1,30 +1,42 @@
 import React, { useState } from 'react';
 import { okrData } from '../data/data';
 
-const OkrDataPage = ({ onApply }) => {
-  const [selectedRows, setSelectedRows] = useState([]); // 체크박스 선택 상태
 
-  // 체크박스 선택/해제 처리
+const OkrDataPage = ({ selectedCompanies, onApply }) => {
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  const filteredData = okrData.filter((okr) =>
+    selectedCompanies.length === 0 || selectedCompanies.includes(okr.company)
+  );
+
   const handleCheckboxChange = (okr) => {
     setSelectedRows((prevSelected) =>
       prevSelected.includes(okr)
-        ? prevSelected.filter((row) => row !== okr) // 선택 해제
-        : [...prevSelected, okr] // 선택 추가
+        ? prevSelected.filter((row) => row !== okr)
+        : [...prevSelected, okr]
     );
   };
 
   return (
     <div className="page-container">
       <h1>OKR 데이터 목록</h1>
-      <div className="apply-button-container">
+      <div>
         <button
-          onClick={() => onApply(selectedRows)} // 선택된 데이터 전달
-          disabled={selectedRows.length === 0} // 데이터 없으면 버튼 비활성화
+          onClick={() => onApply(selectedRows)}
+          disabled={selectedRows.length === 0}
+          style={{
+            backgroundColor: selectedRows.length > 0 ? '#007bff' : '#ccc',
+            color: 'white',
+            border: 'none',
+            padding: '10px 20px',
+            cursor: selectedRows.length > 0 ? 'pointer' : 'not-allowed',
+          }}
         >
-        AI 적용
+          AI 적용
         </button>
       </div>
-      <table border="1" style={{marginTop: '10px' }}>
+
+      <table border="1" style={{ marginTop: '10px' }}>
         <thead>
           <tr>
             <th>No.</th>
@@ -39,7 +51,7 @@ const OkrDataPage = ({ onApply }) => {
           </tr>
         </thead>
         <tbody>
-          {okrData.map((okr) => (
+          {filteredData.map((okr) => (
             <tr key={okr.no}>
               <td>{okr.no}</td>
               <td>{okr.date}</td>
@@ -63,6 +75,5 @@ const OkrDataPage = ({ onApply }) => {
     </div>
   );
 };
-
 
 export default OkrDataPage;

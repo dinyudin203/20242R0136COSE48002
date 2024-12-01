@@ -15,30 +15,37 @@ const OkrPageHeader = ({ activeTab, setActiveTab, onExcelImport }) => {
 
   return (
     <header className="header-container">
-      <h1>Equalsum</h1>
+      {/* 첫 번째 줄: 제목 */}
+      <h1 className="header-title">Equalsum</h1>
+
+      {/* 두 번째 줄: 네비게이션 + Import 버튼 */}
       <div className="nav-section">
-        {/* Active Tab Buttons */}
+        {/* 왼쪽: 네비게이션 버튼 */}
         <div className="nav-buttons">
           <button
             onClick={() => setActiveTab('OkrInfoPage')}
+            className={activeTab === 'OkrInfoPage' ? 'active' : ''}
           >
             OKR 기업정보
           </button>
           <button
             onClick={() => setActiveTab('OkrDataPage')}
+            className={activeTab === 'OkrDataPage' ? 'active' : ''}
           >
             OKR 데이터 목록
           </button>
           <button
             onClick={() => setActiveTab('OkrAIPage')}
+            className={activeTab === 'OkrAIPage' ? 'active' : ''}
           >
             AI 적용
           </button>
         </div>
-        {/* Import Button */}
-        <div className="import-button">
-          <button onClick={handleOpenPopup}>Import</button>
-        </div>
+
+        {/* 오른쪽: Import 버튼 */}
+        <button className="import-button" onClick={handleOpenPopup}>
+          Import
+        </button>
       </div>
 
       {/* 팝업 컴포넌트 */}

@@ -1,7 +1,7 @@
 export const companyData = [
     { no: 1, name: 'Example Corp', year: 2023 },
     { no: 2, name: 'Example Corp', year: 2024 },
-    { no: 3, name: 'Tech Innovators', year: 2023 },
+    { no: 3, name: 'Another Corp', year: 2023 },
     { no: 4, name: 'Tech Innovators', year: 2025 }
   ];
   
