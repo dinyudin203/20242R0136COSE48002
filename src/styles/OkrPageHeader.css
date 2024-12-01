@@ -1,0 +1,40 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+header {
+    display: flex;
+    justify-content: space-start;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f9f9f9; 
+    border-bottom: 1px solid #ddd;
+  }
+  
+  header h1 {
+    font-family: 'Arial', sans-serif; 
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0em 3em 0em 1em;
+  }
+  
+
+  .nav-buttons {
+    display: flex; 
+    gap: 20px;
+  }
+  
+  .nav-buttons button {
+    background: none; 
+    border: none;
+    color: #333;
+    font-family: 'Arial', sans-serif; 
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px;
+  }
+  .nav-buttons button:hover {
+    color: #0056b3; 
+  }
