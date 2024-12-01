@@ -69,7 +69,7 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div>
+    <div className="page-container">
       <h1>AI 적용 결과 페이지</h1>
       <div>
         <label>기업명: </label>

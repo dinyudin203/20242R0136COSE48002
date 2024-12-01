@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/OkrPageHeader.css';
-const OkrPageHeader = ({ activeTab, setActiveTab }) => {
+import ExcelImportPopup from './ExcelImport';
+
+const OkrPageHeader = ({ activeTab, setActiveTab, onExcelImport }) => {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+
+  const handleOpenPopup = () => {
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+  };
+
   return (
-    <header>
-        <h1>Equalsum</h1>
+    <header className="header-container">
+      <h1>Equalsum</h1>
+      <div className="nav-section">
+        {/* Active Tab Buttons */}
         <div className="nav-buttons">
           <button
             onClick={() => setActiveTab('OkrInfoPage')}
@@ -21,11 +35,20 @@ const OkrPageHeader = ({ activeTab, setActiveTab }) => {
             AI 적용
           </button>
         </div>
+        {/* Import Button */}
+        <div className="import-button">
+          <button onClick={handleOpenPopup}>Import</button>
+        </div>
+      </div>
+
+      {/* 팝업 컴포넌트 */}
+      <ExcelImportPopup
+        isVisible={isPopupVisible}
+        onClose={handleClosePopup}
+        onExcelImport={onExcelImport}
+      />
     </header>
-    
   );
 };
-
-
 
 export default OkrPageHeader;

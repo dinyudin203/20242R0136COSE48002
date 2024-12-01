@@ -14,7 +14,7 @@ const OkrDataPage = ({ onApply }) => {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <h1>OKR 데이터 목록</h1>
       <div className="apply-button-container">
         <button
@@ -24,7 +24,7 @@ const OkrDataPage = ({ onApply }) => {
         AI 적용
         </button>
       </div>
-      <table border="1" style={{ width: '100%', marginTop: '10px' }}>
+      <table border="1" style={{marginTop: '10px' }}>
         <thead>
           <tr>
             <th>No.</th>

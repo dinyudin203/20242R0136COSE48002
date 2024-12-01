@@ -1,3 +1,9 @@
+.page-container {
+  padding: 10px 40px; 
+  margin: 0 auto; /* 중앙 정렬 */
+  background-color: white; /* 콘텐츠 배경색 */
+}
+
 h1 {
     font-family: 'Arial', sans-serif;
     font-size: 2rem;
@@ -48,7 +54,8 @@ h1 {
     border: 1px solid #ddd;
     text-align: left;
     color: #333;
-  }
+    background-color: white;
+  }  
   
   table tr:nth-child(even) {
     background-color: #f9f9f9;

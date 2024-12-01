@@ -3,6 +3,7 @@ import OkrPageHeader from './components/OkrPageHeader';
 import OkrInfoPage from './components/OkrInfoPage';
 import OkrDataPage from './components/OkrDataPage';
 import OkrAIPage from './components/OkrAIPage';
+import OkrPageFooter from './components/OkrPageFooter'
 import './styles/global.css';
 
 const App = () => {
@@ -28,6 +29,8 @@ const App = () => {
         )}
         {activeTab === 'OkrAIPage' && <OkrAIPage selectedData={selectedData} />}
       </main>
+      {/* Footer Componet */}
+      <OkrPageFooter />
     </div>
   );
 };

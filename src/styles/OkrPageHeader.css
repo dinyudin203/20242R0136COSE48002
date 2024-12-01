@@ -4,32 +4,37 @@ html, body {
     box-sizing: border-box;
   }
   
-header {
+  header {
     display: flex;
-    justify-content: space-start;
-    align-items: center;
+    flex-direction: column;
     padding: 10px 20px;
-    background-color: #f9f9f9; 
-    border-bottom: 1px solid #ddd;
+    background-color: black;
+    color: white;
   }
   
   header h1 {
     font-family: 'Arial', sans-serif; 
     font-size: 1.5rem;
-    color: #333;
-    margin: 0em 3em 0em 1em;
+    color: white;
+    margin: 10px 0 10px 0; /* 아래쪽 여백 추가 */
+  }
+
+  .nav-section {
+    display: flex;
+    justify-content: space-between; /* 버튼과 Import를 양쪽으로 배치 */
+    align-items: center;
+    margin-top: 10px;
   }
   
-
   .nav-buttons {
     display: flex; 
     gap: 20px;
-  }
+  }  
   
   .nav-buttons button {
     background: none; 
     border: none;
-    color: #333;
+    color: white;
     font-family: 'Arial', sans-serif; 
     font-size: 1rem;
     cursor: pointer;
@@ -38,4 +43,16 @@ header {
   }
   .nav-buttons button:hover {
     color: grey
+  }
+  .import-button button {
+    padding: 10px 10px;
+    border-radius: 5px;
+    background-color: white;
+    color: #007bff;
+    cursor: pointer;
+  }
+  
+  .import-button button:hover {
+    background-color: #007bff;
+    color: white;
   }
