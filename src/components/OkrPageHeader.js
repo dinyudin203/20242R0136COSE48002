@@ -42,10 +42,12 @@ const OkrPageHeader = ({ activeTab, setActiveTab, onExcelImport }) => {
           </button>
         </div>
 
-        {/* 오른쪽: Import 버튼 */}
-        <button className="import-button" onClick={handleOpenPopup}>
-          Import
-        </button>
+        {/* 오른쪽: Import 버튼 (조건부 렌더링) */}
+        {activeTab === 'OkrInfoPage' && (
+          <button className="import-button" onClick={handleOpenPopup}>
+            Import
+          </button>
+        )}
       </div>
 
       {/* 팝업 컴포넌트 */}
