@@ -16,12 +16,14 @@ const OkrDataPage = ({ onApply }) => {
   return (
     <div>
       <h1>OKR 데이터 목록</h1>
-      <button
-        onClick={() => onApply(selectedRows)} // 선택된 데이터 전달
-        disabled={selectedRows.length === 0} // 데이터 없으면 버튼 비활성화
-      >
+      <div className="apply-button-container">
+        <button
+          onClick={() => onApply(selectedRows)} // 선택된 데이터 전달
+          disabled={selectedRows.length === 0} // 데이터 없으면 버튼 비활성화
+        >
         AI 적용
-      </button>
+        </button>
+      </div>
       <table border="1" style={{ width: '100%', marginTop: '10px' }}>
         <thead>
           <tr>

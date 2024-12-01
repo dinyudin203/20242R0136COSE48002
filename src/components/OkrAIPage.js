@@ -56,8 +56,12 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
   };
 
   useEffect(() => {
-    handleFilterChange();
-  }, [selectedCompany, selectedYear]);
+    if (selectedCompany === '모든 기업' && selectedYear === '') {
+      setFilteredData(processedData); 
+    } else {
+      handleFilterChange();
+    }
+  }, [selectedCompany, selectedYear, processedData]);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -93,9 +97,19 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           ))}
         </select>
       </div>
-
+      <div style={{ marginTop: '0.8em', marginRight: '1.5em', textAlign: 'right' }}>
+        <Button onClick={exportAllToExcel} disabled={processedData.length === 0} 
+        style={{ 
+          backgroundColor: processedData.length === 0 ? '#ccc' : '#007bff', 
+          padding: '10px 20px',
+          color: 'white',
+          cursor: processedData.length === 0 ? 'not-allowed' : 'pointer', 
+          }}>
+          전체 export
+        </Button>
+      </div>
       {filteredData.length === 0 ? (
-        <p>AI 처리된 데이터가 없습니다.</p>
+        <p style = {{ margin: '0.8em'}}>AI 처리된 데이터가 없습니다.</p>
       ) : (
         <div style={{ marginTop: '10px' }}>
           {paginatedData.map((okr, index) => (
@@ -103,6 +117,7 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
               key={index}
               style={{
                 border: '1px solid #ccc',
+                borderRadius: '10px',
                 padding: '10px',
                 marginBottom: '10px',
               }}
@@ -142,24 +157,32 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           justifyContent: 'center',
           marginTop: '20px',
           gap: '10px',
+          alignitems: 'center',
+          
         }}
       >
         <button
-          disabled={currentPage === 1}
+          disabled={currentPage === 1 || totalPages === 0}
           onClick={() => setCurrentPage((prev) => prev - 1)}
           style={{
             padding: '5px 10px',
             borderRadius: '4px',
-            backgroundColor: currentPage === 1 ? '#ccc' : '#007bff',
+            backgroundColor: currentPage === 1 || totalPages === 0 ?  '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            cursor: currentPage === 1 || totalPages === 0 ?  'not-allowed' : 'pointer',
           }}
         >
           이전
         </button>
-        <span>
-          {currentPage} / {totalPages}
+        <span
+           style={{
+            display: 'inline-block',
+            fontSize: '1rem',
+            lineHeight: '2',
+          }}
+        >
+          {totalPages === 0 ? '0 / 0' : `${currentPage} / ${totalPages}`}
         </span>
         <button
           disabled={currentPage === totalPages}
@@ -167,20 +190,14 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
           style={{
             padding: '5px 10px',
             borderRadius: '4px',
-            backgroundColor: currentPage === totalPages ? '#ccc' : '#007bff',
+            backgroundColor: currentPage === totalPages || totalPages === 0? '#ccc' : '#007bff',
             color: 'white',
             border: 'none',
-            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            cursor: currentPage === totalPages || totalPages === 0? 'not-allowed' : 'pointer',
           }}
         >
           다음
         </button>
-      </div>
-
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <Button onClick={exportAllToExcel} style={{ padding: '10px 20px', borderRadius: '8px' }}>
-          전체 export
-        </Button>
       </div>
     </div>
   );

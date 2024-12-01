@@ -3,6 +3,7 @@ import OkrPageHeader from './components/OkrPageHeader';
 import OkrInfoPage from './components/OkrInfoPage';
 import OkrDataPage from './components/OkrDataPage';
 import OkrAIPage from './components/OkrAIPage';
+import './styles/global.css';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('OkrInfoPage'); // Default: OKR 기업정보 페이지

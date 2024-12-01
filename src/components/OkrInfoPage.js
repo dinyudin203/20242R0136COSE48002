@@ -3,7 +3,7 @@ import { companyData } from '../data/data';
 
 const OkrInfoPage = () => (
   <div>
-    <h1>OKR 기업정보 페이지</h1>
+    <h1>기업 관리</h1>
     <div>
       <label>기업명: </label>
       <select>
