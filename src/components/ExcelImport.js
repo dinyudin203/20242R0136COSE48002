@@ -1,25 +1,45 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { postExcel } from '../api/api.js';
 import '../styles/ExcelImport.css';
 
 const ExcelImportPopup = ({ isVisible, onClose, onExcelImport }) => {
-  const [selectedFileName, setSelectedFileName] = useState(''); // 선택된 파일명 상태
+  const [selectedFileName, setSelectedFileName] = useState(null);
 
   // 엑셀 파일 업로드 처리
   const handleExcelUpload = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setSelectedFileName(file.name); // 선택된 파일명 설정
+    if (!file){
+      console.error("파일이 선택되지 않았습니다.");
+      return;
+    }
+    
+    setSelectedFileName(file.name);
+    
+    try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        onExcelImport(jsonData); // 부모 컴포넌트로 데이터 전달
+
+        onExcelImport(jsonData);
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+          const response = await postExcel(formData); // API 호출
+          console.log("파일 업로드 성공:", response.data);
+        } catch (uploadError) {
+          console.error("파일 업로드 실패:", uploadError);
+        }
       };
       reader.readAsArrayBuffer(file);
+    } catch (error){
+      console.error("엑셀 파일처리 실패", error);
     }
   };
 

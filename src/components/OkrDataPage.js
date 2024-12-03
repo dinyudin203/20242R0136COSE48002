@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { okrData } from '../data/data';
-
+import { postAIData } from '../api/api';
 
 const OkrDataPage = ({ selectedCompanies, onApply }) => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -17,12 +17,29 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
     );
   };
 
+  const handleApplyAI = async () => {
+    if (selectedRows.length === 0) {
+      console.error('선택된 OKR이 없습니다.');
+      return;
+    }
+
+    const okrIds = selectedRows.map((okr) => okr.no);
+
+    try {
+      const response = await postAIData(okrIds); // OKR ID 배열 전송
+      console.log('AI 적용 성공:', response.data);
+      setSelectedRows([]);
+    } catch (e) {
+      console.error('AI 적용 실패:', e);
+    }
+  };
+
   return (
     <div className="page-container">
       <h1>OKR 데이터 목록</h1>
       <div>
         <button
-          onClick={() => onApply(selectedRows)}
+          onClick={() => handleApplyAI()}
           disabled={selectedRows.length === 0}
           style={{
             backgroundColor: selectedRows.length > 0 ? '#007bff' : '#ccc',
