@@ -1,20 +1,61 @@
-import React, { useState } from 'react';
-import { okrData } from '../data/data';
-import { postAIData } from '../api/api';
+import React, { useState, useEffect } from 'react';
+import { getOkrData , postAIData } from '../api/api';
+import { set } from 'date-fns';
 
 const OkrDataPage = ({ selectedCompanies, onApply }) => {
+  const [okrData, setOkrData] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [localSelectedCompanies, setLocalSelectedCompanies] = useState([]);
+  const [sorting, setSorting] = useState('');
 
-  const filteredData = okrData.filter((okr) =>
-    selectedCompanies.length === 0 || selectedCompanies.includes(okr.company)
-  );
+  const rowsPerPage = 15;
 
+  const fetchOkrData = async () => {
+    try {
+      const company_name = selectedCompanies.length > 0 ? selectedCompanies[0] : ''; // 첫 번째 선택된 기업 사용
+      const response = await getOkrData(currentPage, company_name, sorting);
+      setOkrData(response.data.results);
+      setTotalPages(response.data.total_pages);
+    } catch (error) {
+      console.error('데이터 가져오기 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOkrData();
+  }, [currentPage, selectedCompanies, sorting]);
+
+  const addFilter = (value) => {
+    if (!localSelectedCompanies.includes(value)) {
+      setLocalSelectedCompanies([value]);
+    }
+    if (sorting !== '') {
+      setSorting('');
+    }
+  };
+  
+  const removeFilter = (value) => {
+    setLocalSelectedCompanies([]);
+    setSorting('');
+  }
   const handleCheckboxChange = (okr) => {
     setSelectedRows((prevSelected) =>
       prevSelected.includes(okr)
         ? prevSelected.filter((row) => row !== okr)
         : [...prevSelected, okr]
     );
+  };
+
+  const handleSelectAll = () => {
+    const isAllSelected = okrData.every((okr) => selectedRows.includes(okr));
+
+    if (isAllSelected) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows(okrData);
+    }
   };
 
   const handleApplyAI = async () => {
@@ -37,23 +78,61 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
   return (
     <div className="page-container">
       <h1>OKR 데이터 목록</h1>
-      <div>
-        <button
-          onClick={() => handleApplyAI()}
-          disabled={selectedRows.length === 0}
-          style={{
-            backgroundColor: selectedRows.length > 0 ? '#007bff' : '#ccc',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            cursor: selectedRows.length > 0 ? 'pointer' : 'not-allowed',
-          }}
-        >
-          AI 적용
-        </button>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '10px',
+        }}
+      >
+        <label>기업명: </label>
+        <select
+            onChange={(e) => addFilter(e.target.value)}
+            value={localSelectedCompanies[0] || ''}
+          >
+            <option value="">모든 기업</option>
+            {okrData.map((company) => (
+              <option key={company.name} value={company.name}>
+                {company.name}
+              </option>
+            ))}
+          </select>
+        <label>시간순: </label>
+          <select>
+            <option value="">최신순</option>
+            <option value="">오래된순</option>
+          </select>
+        <div>
+          <button
+            onClick={handleSelectAll}
+            style={{
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              cursor: 'pointer',
+              marginRight: '10px',
+            }}
+          >
+            전체 선택
+          </button>
+          <button
+            onClick={handleApplyAI}
+            disabled={selectedRows.length === 0}
+            style={{
+              backgroundColor: selectedRows.length > 0 ? '#007bff' : '#ccc',
+              color: 'white',
+              border: 'none',
+              padding: '10px 20px',
+              cursor: selectedRows.length > 0 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            AI 적용
+          </button>
+        </div>
       </div>
 
-      <table border="1" style={{ marginTop: '10px' }}>
+      <table border="1" style={{ marginTop: '10px', width: '100%' }}>
         <thead>
           <tr>
             <th>No.</th>
@@ -68,7 +147,7 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.map((okr) => (
+          {okrData.map((okr) => (
             <tr key={okr.no}>
               <td>{okr.no}</td>
               <td>{okr.date}</td>
@@ -89,6 +168,51 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
           ))}
         </tbody>
       </table>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: '20px',
+          gap: '10px',
+        }}
+      >
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((prev) => prev - 1)}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: currentPage === 1 ? '#ccc' : '#007bff',
+            color: 'white',
+            border: 'none',
+            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          이전
+        </button>
+        <span
+          style={{
+            display: 'inline-block',
+            fontSize: '1rem',
+            lineHeight: '2',
+          }}
+        >
+          {`${currentPage} / ${totalPages}`}
+        </span>
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((prev) => prev + 1)}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: currentPage === totalPages ? '#ccc' : '#007bff',
+            color: 'white',
+            border: 'none',
+            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+          }}
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 };

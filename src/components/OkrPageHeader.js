@@ -40,6 +40,12 @@ const OkrPageHeader = ({ activeTab, setActiveTab, onExcelImport }) => {
           >
             AI 적용
           </button>
+          <button
+            onClick={() => setActiveTab('OkrAITotalPage')}
+            className={activeTab === 'OkrAITotalPage' ? 'active' : ''}
+          >
+            저장된 AI 결과
+          </button>
         </div>
 
         {/* 오른쪽: Import 버튼 (조건부 렌더링) */}
@@ -48,6 +54,7 @@ const OkrPageHeader = ({ activeTab, setActiveTab, onExcelImport }) => {
             Import
           </button>
         )}
+
       </div>
 
       {/* 팝업 컴포넌트 */}

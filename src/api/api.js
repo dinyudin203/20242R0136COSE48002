@@ -14,9 +14,9 @@ export const getOkrData = (page, company_name, new_sorting) => {
         params: {company_name, new_sorting},
     });
 };
-export const getTotalAIData = (page, company_name, new_sorting) => {
+export const getTotalAIData = (page, company_name, new_sorting, page_size) => {
     return apiClient.get(`/prediction/${page}`, {
-        params: {company_name, new_sorting},
+        params: {company_name, new_sorting, page_size},
     });
 };
 export const getUniqueAIData = (okr_id) => {
@@ -33,6 +33,11 @@ export const postExcel = (excel) => {
             'Content-Type': 'multipart/form-data',
         },
     })
+}
+export const getCompanyData = (page, company, page_size) => {
+    return apiClient.get(`/company/${page}`, {
+        params: {company, page_size},
+    });
 }
 
 export default apiClient;
