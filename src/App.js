@@ -41,8 +41,8 @@ const App = () => {
         {activeTab === 'OkrAITotalPage' && <OkrAITotalPage selectedData={selectedData} onProcessData={handleApplyData} />}
       </main>
 
-      {/* Footer Component */}
-      <OkrPageFooter />
+      {/* Footer Component
+      <OkrPageFooter /> */}
     </div>
   );
 };

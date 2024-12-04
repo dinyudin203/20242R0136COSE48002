@@ -37,5 +37,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+   "proxy": "http://211.188.61.23:8000"
 }

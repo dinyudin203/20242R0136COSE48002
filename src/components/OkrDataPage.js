@@ -8,7 +8,7 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [localSelectedCompanies, setLocalSelectedCompanies] = useState([]);
-  const [sorting, setSorting] = useState('');
+  const [sorting, setSorting] = useState('true');
 
   const rowsPerPage = 15;
 
@@ -16,10 +16,11 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
     try {
       const company_name = selectedCompanies.length > 0 ? selectedCompanies[0] : ''; // 첫 번째 선택된 기업 사용
       const response = await getOkrData(currentPage, company_name, sorting);
-      setOkrData(response.data.results);
-      setTotalPages(response.data.total_pages);
+      setOkrData(response.data.data||[]);
+      setTotalPages(response.data.total_page);
     } catch (error) {
       console.error('데이터 가져오기 실패:', error);
+      setOkrData([]);
     }
   };
 
@@ -91,9 +92,9 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
             value={localSelectedCompanies[0] || ''}
           >
             <option value="">모든 기업</option>
-            {okrData.map((company) => (
-              <option key={company.name} value={company.name}>
-                {company.name}
+            {okrData.map((okr) => (
+              <option key={okr.company_name} value={okr.company_name}>
+                {okr.company_name}
               </option>
             ))}
           </select>
@@ -148,15 +149,15 @@ const OkrDataPage = ({ selectedCompanies, onApply }) => {
         </thead>
         <tbody>
           {okrData.map((okr) => (
-            <tr key={okr.no}>
-              <td>{okr.no}</td>
-              <td>{okr.date}</td>
-              <td>{okr.company}</td>
-              <td>{okr.industry}</td>
-              <td>{okr.department}</td>
-              <td>{okr.type}</td>
-              <td>{okr.goal}</td>
-              <td>{okr.okr}</td>
+            <tr key={okr}>
+              <td>{okr.okr_id}</td>
+              <td>{okr.created_at.slice(0, 10)}</td>
+              <td>{okr.company_name}</td>
+              <td>{okr.company_field}</td>
+              <td>{okr.team}</td>
+              <td>{okr.is_objectvie ? 'o': 'kr'}</td>
+              <td>{okr.upper_objective}</td>
+              <td>{okr.input_sentence}</td>
               <td>
                 <input
                   type="checkbox"
