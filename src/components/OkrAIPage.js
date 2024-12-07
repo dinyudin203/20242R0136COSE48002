@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../Button';
 import XLSX from 'xlsx-js-style';
+import { getAIResultData } from '../api/api';
 
-const OkrAIPage = ({ selectedData, onProcessData }) => {
+const OkrAIPage = ({ aiOkrId }) => {
   const [processedData, setProcessedData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('모든 기업');
@@ -14,8 +15,17 @@ const OkrAIPage = ({ selectedData, onProcessData }) => {
     setFilteredData(selectedData);
   }, [selectedData]);
 
-  const getUniqueValues = (key) => {
+  const getUniqueValues = async (key) => {
     return Array.from(new Set(processedData.map((okr) => okr[key]))).filter(Boolean);
+  };
+
+  const fetchAIResultData = (aiTaskId) => {
+    try {
+      const response = await getAIResultData(aiTaskId);
+      setProcessedData(response.data.data);
+    } catch (error) {
+      console.error('데이터 가져오기 실패:', error);
+    }
   };
 
   const exportAllToExcel = () => {
