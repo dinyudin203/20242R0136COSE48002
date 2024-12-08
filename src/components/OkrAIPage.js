@@ -1,124 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../Button';
-import XLSX from 'xlsx-js-style';
-import { getAIResultData } from '../api/api';
+import { getUniqueAIData } from '../api/api';
 
-const OkrAIPage = ({ aiOkrId }) => {
-  const [processedData, setProcessedData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState('모든 기업');
-  const [selectedYear, setSelectedYear] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
+  const [currentData, setCurrentData] = useState(null); // 현재 데이터를 저장
+  const [currentIndex, setCurrentIndex] = useState(0); // 현재 인덱스
+  const [loading, setLoading] = useState(false); // 로딩 상태
+  const [error, setError] = useState(null); // 에러 상태
 
-  useEffect(() => {
-    setProcessedData(selectedData);
-    setFilteredData(selectedData);
-  }, [selectedData]);
-
-  const getUniqueValues = async (key) => {
-    return Array.from(new Set(processedData.map((okr) => okr[key]))).filter(Boolean);
-  };
-
-  const fetchAIResultData = (aiTaskId) => {
-    try {
-      const response = await getAIResultData(aiTaskId);
-      setProcessedData(response.data.data);
-    } catch (error) {
-      console.error('데이터 가져오기 실패:', error);
-    }
-  };
-
-  const exportAllToExcel = () => {
-    if (processedData.length === 0) {
-      alert('내보낼 데이터가 없습니다.');
+  // 현재 인덱스의 데이터를 로드
+  const fetchCurrentData = async () => {
+    if (currentIndex >= aiOkrId.length) {
       return;
     }
-    const worksheet = XLSX.utils.json_to_sheet(processedData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR AI 결과');
 
-    worksheet['!cols'] = [
-      { wch: 10 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 30 },
-    ];
+    setLoading(true);
+    setError(null);
 
-    XLSX.writeFile(workbook, 'okr_data.xlsx');
+    try {
+      const id = aiOkrId[currentIndex].id;
+      const response = await getUniqueAIData(id);
+      setCurrentData(response.data); // 현재 데이터를 업데이트
+      setAITaskStatus('success');
+    } catch (err) {
+      console.error('데이터 로드 실패:', err);
+      setError('데이터 로드 실패');
+      setAITaskStatus('error');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFilterChange = () => {
-    let filtered = processedData;
-    if (selectedCompany !== '모든 기업') {
-      filtered = filtered.filter((okr) => okr.company === selectedCompany);
-    }
-    if (selectedYear) {
-      filtered = filtered.filter((okr) => okr.date === selectedYear);
-    }
-    setFilteredData(filtered);
-    setCurrentPage(1);
-  };
-
+  // 첫 번째 데이터 로드
   useEffect(() => {
-    if (selectedCompany === '모든 기업' && selectedYear === '') {
-      setFilteredData(processedData);
-    } else {
-      handleFilterChange();
+    if (aiOkrId.length > 0) {
+      fetchCurrentData();
     }
-  }, [selectedCompany, selectedYear, processedData]);
+  }, [currentIndex]);
 
-  const totalPages = filteredData.length;
+  // 다음 데이터로 이동
+  const handleNext = () => {
+    if (currentIndex < aiOkrId.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  // 이전 데이터로 이동
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+  };
+
+  function FormattedText({ text }) {
+    return <div style={{ whiteSpace: 'pre-line', lineHeight: '1.5' }}>{text}</div>;
+  }
 
   return (
     <div className="page-container">
       <h1>AI 적용 결과 페이지</h1>
-      <div>
-        <label>기업명: </label>
-        <select
-          value={selectedCompany}
-          onChange={(e) => setSelectedCompany(e.target.value)}
-        >
-          <option>모든 기업</option>
-          {getUniqueValues('company').map((company, index) => (
-            <option key={index} value={company}>
-              {company}
-            </option>
-          ))}
-        </select>
-        <label>연도: </label>
-        <select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(e.target.value)}
-        >
-          <option value="">모든 연도</option>
-          {getUniqueValues('date').map((year, index) => (
-            <option key={index} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div style={{ marginTop: '0.8em', textAlign: 'right' }}>
-        <Button
-          onClick={exportAllToExcel}
-          disabled={processedData.length === 0}
-          style={{
-            backgroundColor: processedData.length === 0 ? '#ccc' : '#007bff',
-            padding: '10px 20px',
-            color: 'white',
-            cursor: processedData.length === 0 ? 'not-allowed' : 'pointer',
-          }}
-        >
-          전체 export
-        </Button>
-      </div>
-      {filteredData.length === 0 ? (
-        <p style={{ margin: '0.8em' }}>AI 처리된 데이터가 없습니다.</p>
-      ) : (
+
+      {/* 로딩 상태 */}
+      {loading && <h2>데이터 로딩 중...</h2>}
+
+      {/* 에러 상태 */}
+      {error && <h2>{error}</h2>}
+
+      {/* 데이터가 없을 경우 */}
+      {!currentData && !loading && (
+        <h2 style={{ textAlign: 'left', marginTop: '40px', color: '#555' }}>
+          적용된 데이터가 없습니다.
+        </h2>
+      )}
+
+      {/* 데이터 표시 */}
+      {currentData && (
         <div
           style={{
             border: '1px solid #ccc',
@@ -127,32 +83,78 @@ const OkrAIPage = ({ aiOkrId }) => {
             marginTop: '10px',
           }}
         >
+          <h3>OKR Data</h3>
           <p>
-            <strong>No.:</strong> {filteredData[currentPage - 1].no}
+            <strong>No:</strong> {currentData.okr_id}
           </p>
           <p>
-            <strong>일자:</strong> {filteredData[currentPage - 1].date}
+            <strong>일자:</strong> {aiOkrId[currentIndex].date}
           </p>
           <p>
-            <strong>기업명:</strong> {filteredData[currentPage - 1].company}
+            <strong>기업명:</strong> {aiOkrId[currentIndex].company}
           </p>
           <p>
-            <strong>업종:</strong> {filteredData[currentPage - 1].industry}
+            <strong>업종:</strong> {aiOkrId[currentIndex].industry}
           </p>
           <p>
-            <strong>부서명:</strong> {filteredData[currentPage - 1].department}
+            <strong>부서명:</strong> {aiOkrId[currentIndex].department}
           </p>
           <p>
-            <strong>구분(OKR):</strong> {filteredData[currentPage - 1].type}
+            <strong>구분(OKR):</strong> {aiOkrId[currentIndex].type}
           </p>
           <p>
-            <strong>상위/해당목표:</strong> {filteredData[currentPage - 1].goal}
+            <strong>상위/해당목표:</strong> {currentData.upper_objective}
           </p>
           <p>
-            <strong>작성 OKR:</strong> {filteredData[currentPage - 1].okr}
+            <strong>작성 OKR:</strong> {currentData.input_sentence}
           </p>
+          <h3>Guideline</h3>
+          <p>
+            <strong>가이드라인:</strong>
+            <FormattedText text={currentData.guideline} />
+          </p>
+          <h3>Revision</h3>
+          <p>
+            <strong>수정된 OKR:</strong> {currentData.revision}
+          </p>
+          <p>
+            <strong>수정한 이유:</strong> {currentData.revision_description}
+          </p>
+
+          {/* 모든 Predictions 표시 */}
+          {currentData.predictions && currentData.predictions.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <h3>Predictions</h3>
+              {currentData.predictions.map((prediction, index) => (
+                <div
+                  key={index}
+                  style={{
+                    borderBottom: '1px solid #ccc',
+                    marginBottom: '10px',
+                    paddingBottom: '10px',
+                  }}
+                >
+                  <p>
+                    <strong>타입:</strong> {prediction.prediction_type}
+                  </p>
+                  <p>
+                    <strong>점수:</strong> {prediction.prediction_score}
+                  </p>
+                  <p>
+                    <strong>날짜:</strong> {prediction.prediction_date.split('T')[0]}
+                  </p>
+                  <p>
+                    <strong>이유:</strong>
+                    <FormattedText text={prediction.prediction_description} />
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* 데이터 네비게이션 버튼 */}
       <div
         style={{
           display: 'flex',
@@ -162,38 +164,36 @@ const OkrAIPage = ({ aiOkrId }) => {
         }}
       >
         <button
-          disabled={currentPage === 1 || totalPages === 0}
-          onClick={() => setCurrentPage((prev) => prev - 1)}
+          disabled={!currentData || currentIndex === 0 || loading}
+          onClick={handlePrevious}
           style={{
             padding: '5px 10px',
-            backgroundColor: currentPage === 1 || totalPages === 0 ? '#ccc' : '#007bff',
+            backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
             color: 'white',
-            border: 'none',
-            cursor: currentPage === 1 || totalPages === 0 ? 'not-allowed' : 'pointer',
+            cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
           }}
         >
           이전
         </button>
-        <span
-          style={{
-            display: 'inline-block',
-            fontSize: '1rem',
-            lineHeight: '2',
-          }}
-        >
-          {totalPages === 0 ? '0 / 0' : `${currentPage} / ${totalPages}`}
+        <span>
+          {aiOkrId.length === 0
+            ? '0 / 0'
+            : `${currentIndex + 1} / ${aiOkrId.length}`}
         </span>
         <button
-          disabled={currentPage === totalPages || totalPages === 0}
-          onClick={() => setCurrentPage((prev) => prev + 1)}
+          disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
+          onClick={handleNext}
           style={{
             padding: '5px 10px',
             backgroundColor:
-              currentPage === totalPages || totalPages === 0 ? '#ccc' : '#007bff',
+              !currentData || currentIndex === aiOkrId.length - 1 || loading
+                ? '#ccc'
+                : '#007bff',
             color: 'white',
-            border: 'none',
             cursor:
-              currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer',
+              !currentData || currentIndex === aiOkrId.length - 1 || loading
+                ? 'not-allowed'
+                : 'pointer',
           }}
         >
           다음

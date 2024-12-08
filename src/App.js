@@ -12,11 +12,11 @@ const App = () => {
   const [aiOkrId, setAIOkrId] = useState(0); // 태스크 아이디 관리
   const [aiTaskStatus, setAITaskStatus] = useState(''); // 태스크 상태 관리
 
-  useEffect(() => {
-    if (aiTaskStatus === 'success') {
+  /*useEffect(() => {
+    if (aiTaskStatus === 'success' && activeTab === 'OkrAIPage') {
         setActiveTab('OkrAITotalPage');
     }
-  }, [aiTaskStatus]);
+  }, [aiTaskStatus]);*/
 
   return (
     <div>
@@ -26,8 +26,15 @@ const App = () => {
       {/* Main Content */}
       <main style={{ padding: '20px' }}>
         {activeTab === 'OkrInfoPage' && (<OkrInfoPage/>)}
-        {activeTab === 'OkrDataPage' && (<OkrDataPage/>)}
-        {activeTab === 'OkrAIPage' && <OkrAIPage setAITaskStatus = {setAITaskStatus} setAIOkrId = {setAIOkrId}/>}
+        {activeTab === 'OkrDataPage' && (
+          <OkrDataPage
+            setActiveTab={setActiveTab} // Data -> AI 페이지 전환을 위해 추가
+            setAITaskStatus={setAITaskStatus}
+            setAIOkrId={setAIOkrId}
+          />
+          )
+        } 
+        {activeTab === 'OkrAIPage' && <OkrAIPage setAITaskStatus = {setAITaskStatus}  aiOkrId={aiOkrId}/>}
         {activeTab === 'OkrAITotalPage' && <OkrAITotalPage aiTaskStatus = {aiTaskStatus}/>}
       </main>
 
