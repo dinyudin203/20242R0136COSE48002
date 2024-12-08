@@ -124,7 +124,7 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
           {/* 모든 Predictions 표시 */}
           {currentData.predictions && currentData.predictions.length > 0 && (
             <div style={{ marginTop: '20px' }}>
-              <h3>Predictions</h3>
+              <h3>Evaluation</h3>
               {currentData.predictions.map((prediction, index) => (
                 <div
                   key={index}
@@ -135,7 +135,7 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
                   }}
                 >
                   <p>
-                    <strong>타입:</strong> {prediction.prediction_type}
+                    <strong>평가 기준:</strong> {prediction.prediction_type}
                   </p>
                   <p>
                     <strong>점수:</strong> {prediction.prediction_score}
@@ -144,7 +144,7 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
                     <strong>날짜:</strong> {prediction.prediction_date.split('T')[0]}
                   </p>
                   <p>
-                    <strong>이유:</strong>
+                    <strong>평가 이유:</strong>
                     <FormattedText text={prediction.prediction_description} />
                   </p>
                 </div>
