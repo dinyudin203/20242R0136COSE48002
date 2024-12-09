@@ -1,8 +1,16 @@
+@font-face {
+  font-family: 'Pretendard-Regular';
+  src: url('https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+}
+
 /* 기본 설정 */
 html, body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Pretendard-Regular';
 }
 
 /* 헤더 컨테이너 */
@@ -17,7 +25,6 @@ html, body {
 
 /* 첫 번째 줄: 제목 */
 .header-title {
-  font-family: 'Arial', sans-serif;
   font-size: 1.8rem;
   color: white;
   font-weight: bold;
