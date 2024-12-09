@@ -10,6 +10,8 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
   const [localSelectedField, setLocalSelectedField] = useState(''); // 분야 필터
   const [sorting, setSorting] = useState('true'); // 정렬 필터
 
+  const taskIds = [];
+
   const rowsPerPage = 15;
 
   const task_id = 0;
@@ -50,6 +52,7 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
       // 태스크 상태가 성공("success")이면 다음 페이지로 이동
       if (response.data === 'success') {
         setAITaskStatus('success');
+        setActiveTab('OkrAIPage');
       }
     } catch (e) {
       console.error('태스크 상태 가져오기 실패:', e);
@@ -101,20 +104,23 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
     //   }
     // };
 
-    // try {
-    //   const response = await postAIData(okrIds); // OKR ID 배열 전송
-    //   console.log('AI 적용 성공:', response.data);
+    try {
+      const response = await postAIData(okrIds); // OKR ID 배열 전송
+      console.log('AI 적용 성공:', response.data);
 
-    //   let task_id = response.data.task_id; // let으로 변경하여 재할당 가능
-    //   setAIOkrId(okrIds);
-    //   setAITaskStatus('pending'); // 상태를 업데이트
-    //   setActiveTab('OkrAIPage'); // AI 페이지로 이동
-    // } catch (error) {
-    //   console.error('AI 적용 실패:', error);
-    //   setAITaskStatus('error'); // 상태를 오류로 설정
-    // }
-    const selectedData = selectedRows.map((okr) => ({
+      const data = response.data
+
+      taskIds = data.map(item => item.output_id);
+      //setAIOkrId(okrIds);
+      // setAITaskStatus('pending'); // 상태를 업데이트
+      // setActiveTab('OkrAIPage'); // AI 페이지로 이동
+    } catch (error) {
+      console.error('AI 적용 실패:', error);
+      setAITaskStatus('error'); // 상태를 오류로 설정
+    }
+    const selectedData = selectedRows.map((okr, index) => ({
       id: okr.okr_id,
+      task_id: taskIds[0],
       date: okr.created_at ? okr.created_at.slice(0, 10) : '-',
       companyName: okr.company_name,
       industry: okr.company_field,
@@ -123,11 +129,10 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
       upperObjective: okr.upper_objective || '-',
       inputSentence: okr.input_sentence || '-',
     }));
-
+  
     setAIOkrId(selectedData);
-    setAITaskStatus('pending'); // 상태를 업데이트
-    setActiveTab('OkrAIPage'); // AI 페이지로 이동
-    console.log('AI 적용 성공:', okrIds, selectedData);
+    setActiveTab('OkrAIPage');
+    console.log('AI 페이지로 데이터 넘김:', okrIds, selectedData);
   };
 
   const removeFilters = () => {
