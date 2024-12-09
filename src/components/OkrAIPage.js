@@ -153,52 +153,51 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
           )}
         </div>
       )}
-
-      {/* 데이터 네비게이션 버튼 */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '20px',
-          gap: '10px',
-        }}
-      >
-        <button
-          disabled={!currentData || currentIndex === 0 || loading}
-          onClick={handlePrevious}
-          style={{
-            padding: '5px 10px',
-            backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
-            color: 'white',
-            cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          이전
-        </button>
-        <span>
-          {aiOkrId.length === 0
-            ? '0 / 0'
-            : `${currentIndex + 1} / ${aiOkrId.length}`}
-        </span>
-        <button
-          disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
-          onClick={handleNext}
-          style={{
-            padding: '5px 10px',
-            backgroundColor:
-              !currentData || currentIndex === aiOkrId.length - 1 || loading
-                ? '#ccc'
-                : '#007bff',
-            color: 'white',
-            cursor:
-              !currentData || currentIndex === aiOkrId.length - 1 || loading
-                ? 'not-allowed'
-                : 'pointer',
-          }}
-        >
-          다음
-        </button>
-      </div>
+  style={{
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '20px',
+    gap: '10px',
+  }}
+>
+  <button
+    disabled={!currentData || currentIndex === 0 || loading}
+    onClick={handlePrevious}
+    style={{
+      padding: '5px 10px',
+      backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
+      color: 'white',
+      cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
+    }}
+  >
+    이전
+  </button>
+  <span>
+    {Array.isArray(aiOkrId) && aiOkrId.length > 0
+      ? `${currentIndex + 1} / ${aiOkrId.length}`
+      : '0 / 0'}
+  </span>
+  <button
+    disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
+    onClick={handleNext}
+    style={{
+      padding: '5px 10px',
+      backgroundColor:
+        !currentData || currentIndex === aiOkrId.length - 1 || loading
+          ? '#ccc'
+          : '#007bff',
+      color: 'white',
+      cursor:
+        !currentData || currentIndex === aiOkrId.length - 1 || loading
+          ? 'not-allowed'
+          : 'pointer',
+    }}
+  >
+    다음
+  </button>
+</div>
+
     </div>
   );
 };

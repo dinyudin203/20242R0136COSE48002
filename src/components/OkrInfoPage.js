@@ -10,7 +10,7 @@ const OkrInfoPage = ({ setActiveTab, setSelectedCompanies }) => {
   const [isLoading, setIsLoading] = useState(true); // 로딩 상태
   const pageSize = 8;
 
-  const fetchCompanyData = async (page = 1, company_name = '', field = '', pageSize = 0) => {
+  const fetchCompanyData = async (page = 1, company_name = '', field = '', pageSize = 8) => {
     try {
       setIsLoading(true);
       const response = await getCompanyData(page, company_name, field, pageSize);
@@ -18,7 +18,7 @@ const OkrInfoPage = ({ setActiveTab, setSelectedCompanies }) => {
         ? response.data.data.filter((item) => item.field === field)
         : response.data.data;
       setCompanyData(filteredData || []); // 데이터를 저장
-      setTotalPages(Math.ceil((filteredData || []).length / pageSize)); // 총 페이지 계산
+      setTotalPages(Math.ceil((filteredData.length || 1) / pageSize)); // 총 페이지 계산
     } catch (error) {
       console.error('데이터를 가져오는데 실패했습니다:', error);
       setCompanyData([]);
