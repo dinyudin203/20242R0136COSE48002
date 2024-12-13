@@ -10,7 +10,7 @@ const OkrAITotalPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [aiTotalData, setAITotalData] = useState([]);
   const [sorting, setSorting] = useState('true'); // 정렬 필터
-  const pageSize = 8;
+  const pageSize = 4;
 
   // API 데이터 가져오기
   const fetchAITotalData = async (page = 1, company_name = '', field = '') => {
@@ -28,12 +28,6 @@ const OkrAITotalPage = () => {
       setIsLoading(false);
     }
   };
-
-  const truncateText = (text, maxLength) => {
-    if (!text) return '-';
-    return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
-  };
-  
 
   // 필터 및 페이지 상태에 따라 데이터 가져오기
   useEffect(() => {
@@ -123,13 +117,18 @@ const OkrAITotalPage = () => {
                 <td>{okr.team || '-'}</td>
                 <td>{okr.is_objective ? 'o' : 'kr'}</td>
                 <td>{okr.upper_objective || '-'}</td>
-                <td>{okr.input_sentence || '-'}</td>
-                <td>{okr.revision || '-'}</td>
-                <td>{truncateText(okr.revision_description, 50)}</td>
-                <td><pre style={{ whiteSpace: 'pre-wrap' }}>{truncateText(okr.guideline, 100)}</pre></td>
-                <td>
-                  {okr.predictions && okr.predictions.length > 0
-                    ? okr.predictions.map((prediction) => prediction.score).join(', ')
+                <td style={{ fontSize: '12px' }}>{okr.input_sentence || '-'}</td>
+                <td style={{ fontSize: '12px' }}>{okr.revision || '-'}</td>
+                <td style={{ fontSize: '12px' }}>{okr.revision_description || '-'}</td>
+                <td style={{ fontSize: '12px', whiteSpace: 'pre-wrap' }}>{okr.guideline || '-'}</td>
+                <td style={{ fontSize: '12px' }}>
+                  {Array.isArray(okr.predictions) && okr.predictions.length > 0
+                    ? okr.predictions.map((prediction, idx) => (
+                        <span key={idx}>
+                          {prediction.type}: {prediction.score}
+                          {idx < okr.predictions.length - 1 ? ', ' : ''}
+                        </span>
+                      ))
                     : '-'}
                 </td>
                 <td>
@@ -143,7 +142,7 @@ const OkrAITotalPage = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="9">데이터가 없습니다.</td>
+              <td colSpan="13">데이터가 없습니다.</td>
             </tr>
           )}
         </tbody>
