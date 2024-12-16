@@ -34,7 +34,7 @@ const App = () => {
           />
           )
         } 
-        {activeTab === 'OkrAIPage' && <OkrAIPage setAITaskStatus = {setAITaskStatus}  aiOkrId={aiOkrId}/>}
+        {activeTab === 'OkrAIPage' && <OkrAIPage aiOkrId={aiOkrId}/>}
         {activeTab === 'OkrAITotalPage' && <OkrAITotalPage aiTaskStatus = {aiTaskStatus}/>}
       </main>
 

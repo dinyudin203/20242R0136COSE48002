@@ -69,7 +69,7 @@ export const getCompanyData = (page, company_name, field, page_size) => {
 }
 
 export const getTaskStatus = (task_id) => {
-    return apiClient.get(`/task/${task_id}`);
+    return apiClient.get(`/tasks/${task_id}`);
 }
 
 export default apiClient;

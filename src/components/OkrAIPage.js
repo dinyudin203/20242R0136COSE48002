@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getUniqueAIData } from '../api/api';
+import { getUniqueAIData, getTaskStatus } from '../api/api';
 import * as XLSX from 'xlsx'; // xlsx 라이브러리 임포트
 
-const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
+const OkrAIPage = ({aiOkrId = [] }) => {
   const [currentData, setCurrentData] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  const [AITaskStatus, setAITaskStatus] = useState(''); // 초기값 설정
+  const [completedTasks, setCompletedTasks] = useState([]); // 완료된 task_id 추적
+
+  
 
   const fetchCurrentData = useCallback(async () => {
     if (currentIndex >= aiOkrId.length) return;
+    console.log('aiOkrId:', aiOkrId); 
   
     setLoading(true);
     setError(null);
@@ -18,13 +24,14 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
       const id = aiOkrId[currentIndex].id;
       const response = await getUniqueAIData(id);
       setCurrentData(response.data);
-      setAITaskStatus('success');
+      //setAITaskStatus('fending');
     } catch (err) {
       console.error('데이터 로드 실패:', err);
       setError('데이터 로드 실패');
       setAITaskStatus('error');
     } finally {
       setLoading(false);
+      console.log(currentData)
     }
   }, [currentIndex, aiOkrId, setAITaskStatus]);
 
@@ -50,42 +57,96 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
 
   const handleExport = () => {
     if (!currentData) return;
-
-    // 기본 데이터
-    const exportData = {
-        'No': currentData.okr_id,
-        '일자': aiOkrId[currentIndex].date,
-        '기업명': aiOkrId[currentIndex].companyName,
-        '업종': aiOkrId[currentIndex].industry,
-        '부서명': aiOkrId[currentIndex].department,
-        '구분(OKR)': aiOkrId[currentIndex].type,
-        '상위/해당목표': currentData.upper_objective,
-        '작성 OKR': currentData.input_sentence,
-        '가이드라인': currentData.guideline,
-        '수정된 OKR': currentData.revision,
-        '수정한 이유': currentData.revision_description,
+  
+    const baseExportData = {
+      'No': currentData.okr_id,
+      '일자': aiOkrId[currentIndex].date,
+      '기업명': aiOkrId[currentIndex].companyName,
+      '부서명': aiOkrId[currentIndex].department,
+      '구분': aiOkrId[currentIndex].type,
+      '상위/해당목표': currentData.upper_objective || '',
+      '작성 OKR': currentData.input_sentence || '',
+      '수정 OKR': currentData.revision || '',
+      '수정이유': currentData.revision_description || '',
+      '가이드라인': currentData.guideline || '',
     };
-
-    // 예측 데이터를 열로 추가
-    if (currentData.predictions && currentData.predictions.length > 0) {
-      currentData.predictions.forEach((prediction, index) => {
-        const type = prediction.prediction_type || `Prediction_${index + 1}`;
-        exportData[`${type}_score`] = prediction.prediction_score || 'N/A';
-        exportData[`${type}_description`] = prediction.prediction_description || 'N/A';
-      });
+  
+    // // Process predictions based on the index and type
+    if (aiOkrId[currentIndex].type === 'Key Result') {
+      baseExportData[`align_점수`] ='N/A';
+      baseExportData[`align_이유`] = 'N/A';
+      baseExportData[`customerValue_점수`] = 'N/A';
+      baseExportData[`customerValue_이유`] = 'N/A';
+      baseExportData[`connectivity_점수`] = currentData.predictions[0].prediction_score || 'N/A';
+      baseExportData[`connectivity_이유`] = currentData.predictions[0].prediction_description || 'N/A';
+      baseExportData[`measurability_점수`] = currentData.predictions[1].prediction_score|| 'N/A';
+      baseExportData[`measurability_이유`] = currentData.predictions[1].prediction_description || 'N/A';
+      baseExportData[`directivity_점수`] = currentData.predictions[2].prediction_score || 'N/A';
+      baseExportData[`directivity_이유`] = currentData.predictions[2].prediction_description || 'N/A';
+    } else if (aiOkrId[currentIndex].type === 'Objective') {
+      baseExportData[`align_점수`] = currentData.predictions[0].prediction_score || 'N/A';
+      baseExportData[`align_이유`] = currentData.predictions[0].prediction_description  || 'N/A';
+      baseExportData[`customerValue_점수`] = currentData.predictions[1].prediction_score || 'N/A';
+      baseExportData[`customerValue_이유`] = currentData.predictions[1].prediction_description || 'N/A';
+      baseExportData[`connectivity_점수`] = currentData.predictions[0].prediction_score || 'N/A';
+      baseExportData[`connectivity_이유`] = currentData.predictions[0].prediction_description || 'N/A';
+      baseExportData[`measurability_점수`] = 'N/A';
+      baseExportData[`measurability_이유`] = 'N/A';
+      baseExportData[`directivity_점수`] = 'N/A';
+      baseExportData[`directivity_이유`] = 'N/A';
     }
 
-    // 워크북 생성 및 다운로드
-    const worksheet = XLSX.utils.json_to_sheet([exportData]); // 한 행만 포함
+    // Convert to Excel
+    const worksheet = XLSX.utils.json_to_sheet([baseExportData]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR Data');
     XLSX.writeFile(workbook, `OKR_Data_${aiOkrId[currentIndex].date}.xlsx`);
   };
+  
 
 
   function FormattedText({ text }) {
     return <div style={{ whiteSpace: 'pre-line', lineHeight: '1.5' }}>{text}</div>;
   }
+
+  // 태스크 상태 가져오기
+  const fetchTaskStatus = async (task_id) => {
+    try {
+      const response = await getTaskStatus(task_id);
+      console.log(`태스크 ${task_id} 상태:`, response.data.task_status);
+
+      if (response.data.task_status == 'SUCCESS') {
+        setCompletedTasks((prev) => [...prev, task_id]); // 완료된 task_id 추가
+        setAITaskStatus('success')
+        console.log("AITask:", AITaskStatus)
+      } else if (response.data.task_status == 'PENDING') {
+        setAITaskStatus('pending');
+        console.log("AITask:", AITaskStatus)
+      } else {
+        setAITaskStatus('error');
+      }
+    } catch (error) {
+      console.error(`태스크 ${task_id} 상태 가져오기 실패:`, error);
+      setAITaskStatus('error');
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (!Array.isArray(aiOkrId)) {
+        console.error('aiOkrId is not an array:', aiOkrId);
+        return;
+      }
+      aiOkrId.forEach((item) => {
+        if (!completedTasks.includes(item.task_id)) {
+          fetchTaskStatus(item.task_id);
+        }
+      });
+    }, 5000);
+  
+    return () => clearInterval(intervalId);
+  }, [aiOkrId, completedTasks]);
+  
 
   return (
     <div className="page-container">
@@ -107,21 +168,17 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
         </button>
       </div>
 
-      {/* 로딩 상태 */}
-      {loading && <h2>데이터 로딩 중...</h2>}
+      {error && <h2>{error}</h2>}
+      {!currentData && !loading && <h2>적용된 데이터가 없습니다.</h2>}
+      
+      {(loading || AITaskStatus == 'pending') && <h2>데이터 AI 적용 중...</h2>}
 
       {/* 에러 상태 */}
-      {error && <h2>{error}</h2>}
+      {AITaskStatus == 'error' && <h2 style={{ color: 'red' }}>AI 모델 처리 중 에러가 발생했습니다.</h2>}
 
-      {/* 데이터가 없을 경우 */}
-      {!currentData && !loading && (
-        <h2 style={{ textAlign: 'left', marginTop: '40px', color: '#555' }}>
-          적용된 데이터가 없습니다.
-        </h2>
-      )}
 
       {/* 데이터 표시 */}
-      {currentData && (
+      {currentData && AITaskStatus == 'success'&&(
         <div
           style={{
             border: '1px solid #ccc',
@@ -202,51 +259,52 @@ const OkrAIPage = ({ setAITaskStatus, aiOkrId = {} }) => {
           )}
         </div>
       )}
-      <div
-  style={{
-    display: 'flex',
-    justifyContent: 'center',
-    marginTop: '20px',
-    gap: '10px',
-  }}
->
-  <button
-    disabled={!currentData || currentIndex === 0 || loading}
-    onClick={handlePrevious}
-    style={{
-      padding: '5px 10px',
-      backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
-      color: 'white',
-      cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
-    }}
-  >
-    이전
-  </button>
-  <span>
-    {Array.isArray(aiOkrId) && aiOkrId.length > 0
-      ? `${currentIndex + 1} / ${aiOkrId.length}`
-      : '0 / 0'}
-  </span>
-  <button
-    disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
-    onClick={handleNext}
-    style={{
-      padding: '5px 10px',
-      backgroundColor:
-        !currentData || currentIndex === aiOkrId.length - 1 || loading
-          ? '#ccc'
-          : '#007bff',
-      color: 'white',
-      cursor:
-        !currentData || currentIndex === aiOkrId.length - 1 || loading
-          ? 'not-allowed'
-          : 'pointer',
-    }}
-  >
-    다음
-  </button>
-</div>
 
+      {/* 데이터 네비게이션 버튼 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: '20px',
+          gap: '10px',
+        }}
+      >
+        <button
+          disabled={!currentData || currentIndex === 0 || loading}
+          onClick={handlePrevious}
+          style={{
+            padding: '5px 10px',
+            backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
+            color: 'white',
+            cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          이전
+        </button>
+        <span>
+          {aiOkrId.length === 0
+            ? '0 / 0'
+            : `${currentIndex + 1} / ${aiOkrId.length}`}
+        </span>
+        <button
+          disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
+          onClick={handleNext}
+          style={{
+            padding: '5px 10px',
+            backgroundColor:
+              !currentData || currentIndex === aiOkrId.length - 1 || loading
+                ? '#ccc'
+                : '#007bff',
+            color: 'white',
+            cursor:
+              !currentData || currentIndex === aiOkrId.length - 1 || loading
+                ? 'not-allowed'
+                : 'pointer',
+          }}
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 };

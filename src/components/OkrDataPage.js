@@ -10,7 +10,6 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
   const [localSelectedField, setLocalSelectedField] = useState(''); // 분야 필터
   const [sorting, setSorting] = useState('true'); // 정렬 필터
 
-  const taskIds = [];
 
   const rowsPerPage = 15;
 
@@ -88,52 +87,96 @@ const OkrDataPage = ({ setAITaskStatus , setAIOkrId, setActiveTab}) => {
       console.error('선택된 OKR이 없습니다.');
       return;
     }
-
-    const okrIds = selectedRows.map((okr) => okr.okr_id);
-
-    //   try {
-    //     const response = await postAIData(okrIds); // OKR ID 배열 전송
-    //     console.log('AI 적용 성공:', response.data);
-    //     task_id = response.data.task_id;
-    //     setAIOkrId(okrIds);
-    //     setSelectedRows([]);
-    //     setAITaskStatus('pending'); 
-    //     setActiveTab('OkrAIPage');
-    //   } catch (e) {
-    //     console.error('AI 적용 실패:', e);
-    //   }
-    // };
-
-    try {
-      const response = await postAIData(okrIds); // OKR ID 배열 전송
-      console.log('AI 적용 성공:', response.data);
-
-      const data = response.data
-
-      taskIds = data.map(item => item.output_id);
-      //setAIOkrId(okrIds);
-      // setAITaskStatus('pending'); // 상태를 업데이트
-      // setActiveTab('OkrAIPage'); // AI 페이지로 이동
-    } catch (error) {
-      console.error('AI 적용 실패:', error);
-      setAITaskStatus('error'); // 상태를 오류로 설정
-    }
-    const selectedData = selectedRows.map((okr, index) => ({
-      id: okr.okr_id,
-      task_id: taskIds[0],
-      date: okr.created_at ? okr.created_at.slice(0, 10) : '-',
-      companyName: okr.company_name,
-      industry: okr.company_field,
-      department: okr.team || '-',
-      type: okr.is_objective ? 'Objective' : 'Key Result',
-      upperObjective: okr.upper_objective || '-',
-      inputSentence: okr.input_sentence || '-',
-    }));
   
-    setAIOkrId(selectedData);
-    setActiveTab('OkrAIPage');
-    console.log('AI 페이지로 데이터 넘김:', okrIds, selectedData);
+    const okrIds = selectedRows.map((okr) => okr.okr_id);
+  
+    try {
+      const response = await postAIData(okrIds);
+      console.log('AI 적용 성공:', response.data);
+  
+      // `okr_id`와 `output_id` 매핑
+      const taskData = response.data.map(item => ({
+        okr_id: item.okr_id,
+        task_id: item.output_id
+      }));
+  
+      // 선택된 데이터에 task_id 매핑
+      const selectedData = selectedRows.map((okr) => {
+        const matchedTask = taskData.find(task => task.okr_id === okr.okr_id);
+        return {
+          id: okr.okr_id,
+          task_id: matchedTask ? matchedTask.task_id : null,
+          date: okr.created_at ? okr.created_at.slice(0, 10) : '-',
+          companyName: okr.company_name,
+          industry: okr.company_field,
+          department: okr.team || '-',
+          type: okr.is_objective ? 'Objective' : 'Key Result',
+          upperObjective: okr.upper_objective || '-',
+          inputSentence: okr.input_sentence || '-',
+        };
+      });
+  
+      setAIOkrId(selectedData);
+      setActiveTab('OkrAIPage');
+      console.log('AI 페이지로 데이터 넘김:', selectedData);
+    } catch (error) {
+      //console.error('AI 적용 실패:', error);
+      setAITaskStatus('error');
+    }
   };
+  
+
+  // const handleApplyAI = async () => {
+  //   if (selectedRows.length === 0) {
+  //     console.error('선택된 OKR이 없습니다.');
+  //     return;
+  //   }
+
+  //   const okrIds = selectedRows.map((okr) => okr.okr_id);
+
+  //   //   try {
+  //   //     const response = await postAIData(okrIds); // OKR ID 배열 전송
+  //   //     console.log('AI 적용 성공:', response.data);
+  //   //     task_id = response.data.task_id;
+  //   //     setAIOkrId(okrIds);
+  //   //     setSelectedRows([]);
+  //   //     setAITaskStatus('pending'); 
+  //   //     setActiveTab('OkrAIPage');
+  //   //   } catch (e) {
+  //   //     console.error('AI 적용 실패:', e);
+  //   //   }
+  //   // };
+
+  //   try {
+  //     const response = await postAIData(okrIds); // OKR ID 배열 전송
+  //     console.log('AI 적용 성공:', response.data);
+
+  //     const data = response.data
+
+  //     taskIds = data.map(item => item.output_id);
+  //     //setAIOkrId(okrIds);
+  //     // setAITaskStatus('pending'); // 상태를 업데이트
+  //     // setActiveTab('OkrAIPage'); // AI 페이지로 이동
+  //   } catch (error) {
+  //     console.error('AI 적용 실패:', error);
+  //     setAITaskStatus('error'); // 상태를 오류로 설정
+  //   }
+  //   const selectedData = selectedRows.map((okr, index) => ({
+  //     id: okr.okr_id,
+  //     task_id: taskIds[index],
+  //     date: okr.created_at ? okr.created_at.slice(0, 10) : '-',
+  //     companyName: okr.company_name,
+  //     industry: okr.company_field,
+  //     department: okr.team || '-',
+  //     type: okr.is_objective ? 'Objective' : 'Key Result',
+  //     upperObjective: okr.upper_objective || '-',
+  //     inputSentence: okr.input_sentence || '-',
+  //   }));
+  
+  //   setAIOkrId(selectedData);
+  //   setActiveTab('OkrAIPage');
+  //   console.log('AI 페이지로 데이터 넘김:', okrIds, selectedData);
+  // };
 
   const removeFilters = () => {
     setLocalSelectedCompany('');
