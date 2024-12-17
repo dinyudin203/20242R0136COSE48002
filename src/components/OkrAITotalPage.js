@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getTotalAIData } from '../api/api';
+import * as XLSX from 'xlsx';
 
-const OkrAITotalPage = () => {
+
+
+const OkrAITotalPage = () => {  
+
   const [localSelectedCompany, setLocalSelectedCompany] = useState(''); // 기업 필터
   const [localSelectedField, setLocalSelectedField] = useState(''); // 분야 필터
   const [selectedRows, setSelectedRows] = useState([]);
@@ -11,6 +15,10 @@ const OkrAITotalPage = () => {
   const [aiTotalData, setAITotalData] = useState([]);
   const [sorting, setSorting] = useState('true'); // 정렬 필터
   const pageSize = 4;
+
+  const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+
 
   // API 데이터 가져오기
   const fetchAITotalData = async (page = 1, company_name = '', field = '') => {
@@ -68,9 +76,92 @@ const OkrAITotalPage = () => {
   const uniqueCompanies = Array.from(new Set(aiTotalData.map((okr) => okr.company_name)));
   const uniqueFields = Array.from(new Set(aiTotalData.map((okr) => okr.company_field)));
 
+  const handleExport = async () => {
+    try {
+      setIsLoading(true);
+  
+      let allData = [];
+      if (selectedRows.length > 0) {
+        // 선택된 데이터만
+        allData = selectedRows;
+      } else {
+        // 전체 데이터를 가져오기
+        for (let page = 1; page <= totalPages; page++) {
+          const response = await getTotalAIData(page, localSelectedCompany, localSelectedField, sorting);
+          const pageData = response.data.data || [];
+          allData = allData.concat(pageData);
+        }
+      }
+  
+      if (!allData.length) {
+        alert('내보낼 데이터가 없습니다.');
+        return;
+      }
+  
+      // 엑셀 컬럼 제목 설정 (화면의 열 이름과 동일하게 설정)
+      const exportData = allData.map((okr, index) => ({
+        'No.': index + 1,
+        '일자': okr.created_at ? okr.created_at.slice(0, 10) : '-',
+        '기업명': okr.company_name || '-',
+        '업종': okr.company_field || '-',
+        '부서명': okr.team || '-',
+        '구분(OKR)': okr.is_objective ? 'O' : 'KR',
+        '상위/해당목표': okr.upper_objective || '-',
+        '작성 OKR': okr.input_sentence || '-',
+        '수정 OKR': okr.revision || '-',
+        '수정 이유': okr.revision_description || '-',
+        '가이드라인': okr.guideline || '-',
+        '평가': Array.isArray(okr.predictions) && okr.predictions.length > 0
+          ? okr.predictions.map((prediction) => `${prediction.type}: ${prediction.score}`).join(', ')
+          : '-',
+      }));
+  
+      // 날짜 추가
+      const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  
+      // 엑셀 시트 생성
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'AI_Total_Data');
+  
+      // 엑셀 파일 다운로드
+      XLSX.writeFile(workbook, `OKR_Total_Data_${currentDate}.xlsx`);
+    } catch (error) {
+      console.error('데이터를 내보내는 중 오류가 발생했습니다:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startIndex = (currentPage - 1) * pageSize; // 현재 페이지의 시작 인덱스
+  const endIndex = startIndex + pageSize; // 현재 페이지의 끝 인덱스
+  const currentPageData = aiTotalData.slice(startIndex, endIndex); // 페이지 데이터 슬라이싱
+  
+
   return (
     <div className="page-container">
-      <h1>저장된 AI 결과</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px', // Optional spacing below the header
+        }}> 
+        <h1>저장된 AI 결과</h1>
+        <button
+            onClick={handleExport}
+            style={{
+              padding: '10px 15px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+            }}
+          >
+            Export
+        </button>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <label>기업명: </label>
@@ -107,10 +198,10 @@ const OkrAITotalPage = () => {
           </tr>
         </thead>
         <tbody>
-          {aiTotalData.length > 0 ? (
-            aiTotalData.map((okr, index) => (
-              <tr key={okr.okr_id || index}>
-                <td>{(currentPage - 1) * pageSize + index + 1}</td>
+          {currentPageData.length > 0 ? (
+            currentPageData.map((okr, index) => (
+              <tr key={okr.okr_id || startIndex + index}>
+                <td>{startIndex + index + 1}</td>
                 <td>{okr.created_at ? okr.created_at.slice(0, 10) : '-'}</td>
                 <td>{okr.company_name}</td>
                 <td>{okr.company_field}</td>

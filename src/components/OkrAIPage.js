@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback,useMemo } from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import { getUniqueAIData, getTaskStatus } from '../api/api';
 import * as XLSX from 'xlsx';
 
@@ -9,6 +9,10 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
   const [pendingTasks, setPendingTasks] = useState([]); // Track pending task_ids
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isPending_start, setIsPending_start] = useState(true);
+
+  const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
 
   // Debugging aiOkrId
   useEffect(() => {
@@ -37,6 +41,7 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
     aiOkrId.forEach((item) => {
       fetchDataForId(item);
     });
+
   }, [aiOkrId, fetchDataForId]);
 
   useEffect(() => {
@@ -63,9 +68,10 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
           setCompletedTasks((prev) => [...prev, item.task_id]);
           setPendingTasks((prev) => prev.filter((taskId) => taskId !== item.task_id)); // PENDING에서 제거
           await fetchDataForId(item); // 성공 시 데이터 가져오기
+          if(isPending_start)
+            setIsPending_start(false);
         } else if (response_state === 'PENDING') {
           // PENDING 상태를 유지
-
           setPendingTasks((prev) => {
             if (!prev.includes(item.task_id)) {
               console.log('PENDING 상태 추가:', item.task_id);
@@ -75,6 +81,8 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
           });
 
           console.log('isPending 상태 확인:', isPending);
+          if(isPending_start)
+            setIsPending_start(false);
                 
         } else {
           console.warn(`Task ${item.task_id} returned unexpected status: ${response_state}`);
@@ -162,7 +170,7 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR Data');
-    XLSX.writeFile(workbook, `OKR_Data_Export.xlsx`);
+    XLSX.writeFile(workbook, `OKR_Data_${currentDate}.xlsx`);
   };
 
   // Navigate to the next page
@@ -214,11 +222,16 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
           Export
         </button>
       </div> 
-      {loading && <h2>Loading...</h2>}
       {error && <h2 style={{ color: 'red' }}>{error}</h2>}
-
-      {/* Display the current OKR Data */}
-      {currentData? ( !isPending ? (
+      { loading ? (
+        <h2 style={{ textAlign: 'center', marginTop: '200px', marginBottom: '300px' }}>Loading...</h2>
+        ) : (isPending_start || isPending)  && currentData ? (
+          <h2 style={{ textAlign: 'center', marginTop: '200px' , marginBottom: '300px'}}>
+            Task is still pending. 
+            <h3></h3>
+            Please wait.
+          </h2>
+        ) : currentData ? (
         <div style={{ marginTop: '20px', border: '1px solid #ccc', padding: '10px' }}>
           <h3>OKR {currentIndex + 1}</h3>
           <p><strong>기업명:</strong> {currentAiOkr?.companyName}</p>
@@ -264,19 +277,11 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
               ))}
             </div>
           )}
-        </div>
-        ): (
-          <h2 style={{ marginTop: '100px', marginBottom: '300px', textAlign: 'center' }}>
-            Task is still pending. 
-            <p></p>
-            Please wait.
-          </h2>
-          ) 
-      ): (
-          <h2 style={{ marginTop: '100px', marginBottom: '300px',textAlign: 'center' }}>
-            No data available.
-          </h2>
-        )
+        </div>):(
+            <h2 style={{ marginTop: '230px', marginBottom: '300px',textAlign: 'center' }}>
+              No data available.
+            </h2>
+          )
       }
 
       {/* Pagination Buttons */}
@@ -301,7 +306,7 @@ const OkrAIPage = ({ aiOkrId = [] }) => {
           disabled={currentIndex === aiOkrId.length - 1}
           style={{
             padding: '5px 10px',
-            backgroundColor: currentIndex === aiOkrId.length - 1 ? '#ccc' : '#007bff',
+            backgroundColor: ( currentIndex === aiOkrId.length - 1 || aiOkrId.length == 0)  ? '#ccc' : '#007bff',
             color: 'white',
             cursor: currentIndex === aiOkrId.length - 1 ? 'not-allowed' : 'pointer',
           }}
