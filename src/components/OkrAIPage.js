@@ -1,158 +1,205 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback,useMemo } from 'react';
 import { getUniqueAIData, getTaskStatus } from '../api/api';
-import * as XLSX from 'xlsx'; // xlsx 라이브러리 임포트
+import * as XLSX from 'xlsx';
 
-const OkrAIPage = ({aiOkrId = [] }) => {
-  const [currentData, setCurrentData] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+const OkrAIPage = ({ aiOkrId = [] }) => {
+  const [currentDataList, setCurrentDataList] = useState([]); // All fetched data
+  const [currentIndex, setCurrentIndex] = useState(0); // Track current page
+  const [completedTasks, setCompletedTasks] = useState([]); // Track completed task_ids
+  const [pendingTasks, setPendingTasks] = useState([]); // Track pending task_ids
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  const [AITaskStatus, setAITaskStatus] = useState(''); // 초기값 설정
-  const [completedTasks, setCompletedTasks] = useState([]); // 완료된 task_id 추적
 
-  
+  // Debugging aiOkrId
+  useEffect(() => {
+    console.log('aiOkrId:', aiOkrId, 'Type:', typeof aiOkrId);
+  }, [aiOkrId]);
 
-  const fetchCurrentData = useCallback(async () => {
-    if (currentIndex >= aiOkrId.length) return;
-    console.log('aiOkrId:', aiOkrId); 
-  
-    setLoading(true);
-    setError(null);
-  
+  // Fetch data for all items
+  const fetchDataForId = useCallback(async (item) => {
     try {
-      const id = aiOkrId[currentIndex].id;
-      const response = await getUniqueAIData(id);
-      setCurrentData(response.data);
-      //setAITaskStatus('fending');
+      const response = await getUniqueAIData(item.id);
+      setCurrentDataList((prev) => {
+        const updatedList = prev.filter((data) => data.task_id !== item.task_id); // 기존 중복 제거
+        return [...updatedList, { ...response.data, task_id: item.task_id }];
+      });
+      setPendingTasks((prev) => prev.filter((taskId) => taskId !== item.task_id));
     } catch (err) {
-      console.error('데이터 로드 실패:', err);
-      setError('데이터 로드 실패');
-      setAITaskStatus('error');
-    } finally {
-      setLoading(false);
-      console.log(currentData)
+      console.error(`Failed to fetch data for id ${item.id}:`, err);
     }
-  }, [currentIndex, aiOkrId, setAITaskStatus]);
+  }, []); 
 
   useEffect(() => {
-    if (aiOkrId.length > 0) {
-      fetchCurrentData();
+    if (!Array.isArray(aiOkrId)) {
+      console.error('Invalid aiOkrId. Expected an array but got:', aiOkrId);
+      return;
     }
-  // 의존성 배열에 필요한 값을 추가
-  }, [currentIndex, aiOkrId.length, fetchCurrentData]);
+    aiOkrId.forEach((item) => {
+      fetchDataForId(item);
+    });
+  }, [aiOkrId, fetchDataForId]);
+
+  useEffect(() => {
+    if (Array.isArray(aiOkrId)) {
+      const allPendingTasks = aiOkrId.map((item) => item.task_id);
+      setPendingTasks(allPendingTasks);
+    }
+  }, [aiOkrId]);
   
 
+  // Check task statuses periodically
+  const checkTaskStatus = useCallback(async () => {
+    if (!Array.isArray(aiOkrId)) return;
+  
+    const statusPromises = aiOkrId.map(async (item) => {
+      // PENDING 상태이거나 아직 완료되지 않은 항목만 상태 확인
+      if (!completedTasks.includes(item.task_id)) {
+        const response = await getTaskStatus(item.task_id);
+        const response_state = String(response.data.task_status);
+        const checking_true = (response_state === 'PENDING')
+        console.log('State', item.id, ':', response_state, checking_true);
+  
+        if (response_state === 'SUCCESS') {
+          setCompletedTasks((prev) => [...prev, item.task_id]);
+          setPendingTasks((prev) => prev.filter((taskId) => taskId !== item.task_id)); // PENDING에서 제거
+          await fetchDataForId(item); // 성공 시 데이터 가져오기
+        } else if (response_state === 'PENDING') {
+          // PENDING 상태를 유지
+
+          setPendingTasks((prev) => {
+            if (!prev.includes(item.task_id)) {
+              console.log('PENDING 상태 추가:', item.task_id);
+              return [...prev, item.task_id];
+            }
+            return prev;
+          });
+
+          console.log('isPending 상태 확인:', isPending);
+                
+        } else {
+          console.warn(`Task ${item.task_id} returned unexpected status: ${response_state}`);
+        }
+      }
+    });
+  
+    await Promise.all(statusPromises); // 모든 상태 체크가 끝날 때까지 기다림
+  }, [aiOkrId, completedTasks, pendingTasks, fetchDataForId]);    
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      checkTaskStatus();
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [checkTaskStatus]);
+
+  // Handle exporting all data
+  const handleExport = () => {
+    if (!currentDataList.length) {
+      alert('No data available for export!');
+      return;
+    }
+    // PENDING 상태가 아닌 데이터만 필터링
+    const filteredData = currentDataList.filter(
+      (data) => !pendingTasks.includes(data.task_id)
+    );
+
+    if (filteredData.length === 0) {
+      alert('No completed data available for export!');
+      return;
+    }
+
+    const uniqueData = Array.from(
+      new Map(filteredData.map((item) => [item.task_id, item])).values()
+    );
+  
+    if (uniqueData.length === 0) {
+      alert('No completed data available for export!');
+      return;
+    }
+
+    const exportData = currentDataList.map((data) => {
+      const aiOkrItem = aiOkrId.find((item) => item.task_id === data.task_id);
+      const baseExportData = {
+        'No': data.okr_id,
+        '일자': aiOkrItem?.date || '',
+        '기업명': aiOkrItem?.companyName || '',
+        '부서명': aiOkrItem?.department || '',
+        '구분': aiOkrItem?.type || '',
+        '상위/해당목표': data.upper_objective || '',
+        '작성 OKR': data.input_sentence || '',
+        '수정 OKR': data.revision || '',
+        '수정이유': data.revision_description || '',
+        '가이드라인': data.guideline || '',
+      };
+
+      if (aiOkrItem?.type === 'Key Result') {
+        baseExportData['연관성_점수'] = 'N/A';
+        baseExportData['연관성_이유'] = 'N/A';
+        baseExportData['고객가치_점수'] = 'N/A';
+        baseExportData['고객가치_이유'] = 'N/A';
+        baseExportData['연결성_점수'] = data.predictions?.[0]?.prediction_score || 'N/A';
+        baseExportData['연결성_이유'] = data.predictions?.[0]?.prediction_description || 'N/A';
+        baseExportData['측정가능성_점수'] = data.predictions?.[1]?.prediction_score || 'N/A';
+        baseExportData['측정가능성_이유'] = data.predictions?.[1]?.prediction_description || 'N/A';
+        baseExportData['렬과지향성_점수'] = data.predictions?.[2]?.prediction_score || 'N/A';
+        baseExportData['결과지향성_이유'] = data.predictions?.[2]?.prediction_description || 'N/A';
+      } else if (aiOkrItem?.type === 'Objective') {
+        baseExportData['연관성_점수'] = data.predictions?.[0]?.prediction_score || 'N/A';
+        baseExportData['연관성_이유'] = data.predictions?.[0]?.prediction_description || 'N/A';
+        baseExportData['고객가치_점수'] = data.predictions?.[1]?.prediction_score || 'N/A';
+        baseExportData['고객가치_이유'] = data.predictions?.[1]?.prediction_description || 'N/A';
+        baseExportData['연결성_점수'] = 'N/A';
+        baseExportData['연결성_이유'] = 'N/A';
+        baseExportData['측정가능성_점수'] = 'N/A';
+        baseExportData['측정가능성_이유'] = 'N/A';
+        baseExportData['렬과지향성_점수'] = 'N/A';
+        baseExportData['결과지향성_이유'] = 'N/A';
+      }
+
+      return baseExportData;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR Data');
+    XLSX.writeFile(workbook, `OKR_Data_Export.xlsx`);
+  };
+
+  // Navigate to the next page
   const handleNext = () => {
     if (currentIndex < aiOkrId.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     }
   };
 
+  // Navigate to the previous page
   const handlePrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
-  const handleExport = () => {
-    if (!currentData) return;
-  
-    const baseExportData = {
-      'No': currentData.okr_id,
-      '일자': aiOkrId[currentIndex].date,
-      '기업명': aiOkrId[currentIndex].companyName,
-      '부서명': aiOkrId[currentIndex].department,
-      '구분': aiOkrId[currentIndex].type,
-      '상위/해당목표': currentData.upper_objective || '',
-      '작성 OKR': currentData.input_sentence || '',
-      '수정 OKR': currentData.revision || '',
-      '수정이유': currentData.revision_description || '',
-      '가이드라인': currentData.guideline || '',
-    };
-  
-    // // Process predictions based on the index and type
-    if (aiOkrId[currentIndex].type === 'Key Result') {
-      baseExportData[`align_점수`] ='N/A';
-      baseExportData[`align_이유`] = 'N/A';
-      baseExportData[`customerValue_점수`] = 'N/A';
-      baseExportData[`customerValue_이유`] = 'N/A';
-      baseExportData[`connectivity_점수`] = currentData.predictions[0].prediction_score || 'N/A';
-      baseExportData[`connectivity_이유`] = currentData.predictions[0].prediction_description || 'N/A';
-      baseExportData[`measurability_점수`] = currentData.predictions[1].prediction_score|| 'N/A';
-      baseExportData[`measurability_이유`] = currentData.predictions[1].prediction_description || 'N/A';
-      baseExportData[`directivity_점수`] = currentData.predictions[2].prediction_score || 'N/A';
-      baseExportData[`directivity_이유`] = currentData.predictions[2].prediction_description || 'N/A';
-    } else if (aiOkrId[currentIndex].type === 'Objective') {
-      baseExportData[`align_점수`] = currentData.predictions[0].prediction_score || 'N/A';
-      baseExportData[`align_이유`] = currentData.predictions[0].prediction_description  || 'N/A';
-      baseExportData[`customerValue_점수`] = currentData.predictions[1].prediction_score || 'N/A';
-      baseExportData[`customerValue_이유`] = currentData.predictions[1].prediction_description || 'N/A';
-      baseExportData[`connectivity_점수`] = currentData.predictions[0].prediction_score || 'N/A';
-      baseExportData[`connectivity_이유`] = currentData.predictions[0].prediction_description || 'N/A';
-      baseExportData[`measurability_점수`] = 'N/A';
-      baseExportData[`measurability_이유`] = 'N/A';
-      baseExportData[`directivity_점수`] = 'N/A';
-      baseExportData[`directivity_이유`] = 'N/A';
-    }
-
-    // Convert to Excel
-    const worksheet = XLSX.utils.json_to_sheet([baseExportData]);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'OKR Data');
-    XLSX.writeFile(workbook, `OKR_Data_${aiOkrId[currentIndex].date}.xlsx`);
-  };
-  
-
+  // Get the current data for the selected index
+  const currentAiOkr = aiOkrId[currentIndex];
+  const currentData = currentDataList.find((data) => data.task_id === currentAiOkr?.task_id);
+  // const isPending = pendingTasks.includes(currentAiOkr?.task_id);
+  // const isPending = useMemo(() => pendingTasks.includes(currentAiOkr?.task_id), [pendingTasks, currentAiOkr]);
+  const isPending = pendingTasks.includes(currentAiOkr?.task_id);
 
   function FormattedText({ text }) {
     return <div style={{ whiteSpace: 'pre-line', lineHeight: '1.5' }}>{text}</div>;
   }
 
-  // 태스크 상태 가져오기
-  const fetchTaskStatus = async (task_id) => {
-    try {
-      const response = await getTaskStatus(task_id);
-      console.log(`태스크 ${task_id} 상태:`, response.data.task_status);
-
-      if (response.data.task_status == 'SUCCESS') {
-        setCompletedTasks((prev) => [...prev, task_id]); // 완료된 task_id 추가
-        setAITaskStatus('success')
-        console.log("AITask:", AITaskStatus)
-      } else if (response.data.task_status == 'PENDING') {
-        setAITaskStatus('pending');
-        console.log("AITask:", AITaskStatus)
-      } else {
-        setAITaskStatus('error');
-      }
-    } catch (error) {
-      console.error(`태스크 ${task_id} 상태 가져오기 실패:`, error);
-      setAITaskStatus('error');
-    }
-  };
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!Array.isArray(aiOkrId)) {
-        console.error('aiOkrId is not an array:', aiOkrId);
-        return;
-      }
-      aiOkrId.forEach((item) => {
-        if (!completedTasks.includes(item.task_id)) {
-          fetchTaskStatus(item.task_id);
-        }
-      });
-    }, 5000);
-  
-    return () => clearInterval(intervalId);
-  }, [aiOkrId, completedTasks]);
-  
-
   return (
     <div className="page-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px', // Optional spacing below the header
+        }}> 
         <h1>AI 적용 결과 페이지</h1>
-        {/* Export 버튼 */}
         <button
           onClick={handleExport}
           style={{
@@ -166,66 +213,26 @@ const OkrAIPage = ({aiOkrId = [] }) => {
         >
           Export
         </button>
-      </div>
+      </div> 
+      {loading && <h2>Loading...</h2>}
+      {error && <h2 style={{ color: 'red' }}>{error}</h2>}
 
-      {error && <h2>{error}</h2>}
-      {!currentData && !loading && <h2>적용된 데이터가 없습니다.</h2>}
-      
-      {(loading || AITaskStatus == 'pending') && <h2>데이터 AI 적용 중...</h2>}
-
-      {/* 에러 상태 */}
-      {AITaskStatus == 'error' && <h2 style={{ color: 'red' }}>AI 모델 처리 중 에러가 발생했습니다.</h2>}
-
-
-      {/* 데이터 표시 */}
-      {currentData && AITaskStatus == 'success'&&(
-        <div
-          style={{
-            border: '1px solid #ccc',
-            borderRadius: '10px',
-            padding: '10px',
-            marginTop: '10px',
-          }}
-        >
-          <h3>OKR Data</h3>
-          <p>
-            <strong>No:</strong> {currentData.okr_id}
-          </p>
-          <p>
-            <strong>일자:</strong> {aiOkrId[currentIndex].date}
-          </p>
-          <p>
-            <strong>기업명:</strong> {aiOkrId[currentIndex].companyName}
-          </p>
-          <p>
-            <strong>업종:</strong> {aiOkrId[currentIndex].industry}
-          </p>
-          <p>
-            <strong>부서명:</strong> {aiOkrId[currentIndex].department}
-          </p>
-          <p>
-            <strong>구분(OKR):</strong> {aiOkrId[currentIndex].type}
-          </p>
-          <p>
-            <strong>상위/해당목표:</strong> {currentData.upper_objective}
-          </p>
-          <p>
-            <strong>작성 OKR:</strong> {currentData.input_sentence}
-          </p>
-          <h3>Guideline</h3>
-          <p>
-            <strong>가이드라인:</strong>
-            <FormattedText text={currentData.guideline} />
-          </p>
+      {/* Display the current OKR Data */}
+      {currentData? ( !isPending ? (
+        <div style={{ marginTop: '20px', border: '1px solid #ccc', padding: '10px' }}>
+          <h3>OKR {currentIndex + 1}</h3>
+          <p><strong>기업명:</strong> {currentAiOkr?.companyName}</p>
+          <p><strong>부서명:</strong> {currentAiOkr?.department}</p>
+          <p><strong>구분(OKR):</strong> {currentAiOkr?.type}</p>
+          <p><strong>상위/해당목표:</strong> {currentData.upper_objective}</p>
+          <p><strong>작성 OKR:</strong> {currentData.input_sentence}</p>
+ 
           <h3>Revision</h3>
-          <p>
-            <strong>수정된 OKR:</strong> {currentData.revision}
-          </p>
-          <p>
-            <strong>수정한 이유:</strong> {currentData.revision_description}
-          </p>
+          <p><strong>수정된 OKR:</strong> {currentData.revision}</p>
+          <p><strong>수정한 이유:</strong> {currentData.revision_description}</p>
 
-          {/* 모든 Predictions 표시 */}
+          <h3>Guideline</h3>
+          <p><FormattedText text={currentData.guideline} /></p>
           {currentData.predictions && currentData.predictions.length > 0 && (
             <div style={{ marginTop: '20px' }}>
               <h3>Evaluation</h3>
@@ -258,48 +265,45 @@ const OkrAIPage = ({aiOkrId = [] }) => {
             </div>
           )}
         </div>
-      )}
+        ): (
+          <h2 style={{ marginTop: '100px', marginBottom: '300px', textAlign: 'center' }}>
+            Task is still pending. 
+            <p></p>
+            Please wait.
+          </h2>
+          ) 
+      ): (
+          <h2 style={{ marginTop: '100px', marginBottom: '300px',textAlign: 'center' }}>
+            No data available.
+          </h2>
+        )
+      }
 
-      {/* 데이터 네비게이션 버튼 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '20px',
-          gap: '10px',
-        }}
-      >
+      {/* Pagination Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
         <button
-          disabled={!currentData || currentIndex === 0 || loading}
           onClick={handlePrevious}
+          disabled={currentIndex === 0}
           style={{
             padding: '5px 10px',
-            backgroundColor: !currentData || currentIndex === 0 || loading ? '#ccc' : '#007bff',
+            backgroundColor: currentIndex === 0 ? '#ccc' : '#007bff',
             color: 'white',
-            cursor: !currentData || currentIndex === 0 || loading ? 'not-allowed' : 'pointer',
+            cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
           }}
         >
           이전
         </button>
         <span>
-          {aiOkrId.length === 0
-            ? '0 / 0'
-            : `${currentIndex + 1} / ${aiOkrId.length}`}
+          {aiOkrId.length > 0 ? `${currentIndex + 1} / ${aiOkrId.length}` : '0 / 0'}
         </span>
         <button
-          disabled={!currentData || currentIndex === aiOkrId.length - 1 || loading}
           onClick={handleNext}
+          disabled={currentIndex === aiOkrId.length - 1}
           style={{
             padding: '5px 10px',
-            backgroundColor:
-              !currentData || currentIndex === aiOkrId.length - 1 || loading
-                ? '#ccc'
-                : '#007bff',
+            backgroundColor: currentIndex === aiOkrId.length - 1 ? '#ccc' : '#007bff',
             color: 'white',
-            cursor:
-              !currentData || currentIndex === aiOkrId.length - 1 || loading
-                ? 'not-allowed'
-                : 'pointer',
+            cursor: currentIndex === aiOkrId.length - 1 ? 'not-allowed' : 'pointer',
           }}
         >
           다음
